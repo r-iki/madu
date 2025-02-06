@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% load socialaccount %}
+{% block title %}Login - MADU SOFTWERE{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto bg-white p-8 rounded-lg shadow-lg">
+    <h2 class="text-2xl font-bold mb-6 text-center">Login</h2>
+
+    <!-- Form Login Default -->
+    <form method="post" action="{% url 'account_login' %}" class="space-y-4">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700">
+            Login
+        </button>
+    </form>
+
+    <!-- Opsi Login dengan Google -->
+    <div class="mt-6 text-center">
+        <p class="mb-2">Or login with:</p>
+        <a href="{% provider_login_url 'google' %}" class="bg-red-600 text-white py-2 px-4 rounded hover:bg-red-700">
+            Login with Google
+        </a>
+    </div>
+
+    <!-- Link ke Halaman Registrasi -->
+    <div class="mt-6 text-center">
+        <p>Don't have an account? <a href="{% url 'account_signup' %}" class="text-blue-600 hover:underline">Sign up</a></p>
+    </div>
+</div>
+{% endblock %}

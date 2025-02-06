@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% load socialaccount %}
+{% block title %}Sign Up - MADU SOFTWERE{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto bg-white p-8 rounded-lg shadow-lg">
+    <h2 class="text-2xl font-bold mb-6 text-center">Sign Up</h2>
+
+    <!-- Form Registrasi -->
+    <form method="post" action="{% url 'account_signup' %}" class="space-y-4">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700">
+            Sign Up
+        </button>
+    </form>
+
+    <!-- Link ke Halaman Login -->
+    <div class="mt-6 text-center">
+        <p>Already have an account? <a href="{% url 'account_login' %}" class="text-blue-600 hover:underline">Login</a></p>
+    </div>
+</div>
+{% endblock %}
