@@ -17,6 +17,7 @@ from dotenv import load_dotenv
 from urllib.parse import urlparse
 
 load_dotenv()
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -28,10 +29,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config('DEBUG', default=False, cast=bool)
+DEBUG = config('DEBUG',default=False, cast=bool)
 # DEBUG =False
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='').split(',') 
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='*').split(',') 
 
 # Application definition
 
@@ -168,11 +169,40 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
 STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+# STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, "static"),  # Pastikan folder static ada
-]
+# STATICFILES_DIRS = [
+#     os.path.join(BASE_DIR, "static"),  # Pastikan folder static ada
+# ]
+CLOUDFLARE_R2_BUCKET=config('CLOUDFLARE_R2_BUCKET')
+CLOUDFLARE_R2_ACCESS_KEY=config('CLOUDFLARE_R2_ACCESS_KEY')
+CLOUDFLARE_R2_SECRET_KEY=config('CLOUDFLARE_R2_SECRET_KEY')
+CLOUDFLARE_R2_BUCKET_ENDPOINT= config('CLOUDFLARE_R2_BUCKET_ENDPOINT')
+
+
+CLOUDFLARE_R2_CONFIG_OPTIONS = {
+    'bucket_name': CLOUDFLARE_R2_BUCKET,
+    'access_key': CLOUDFLARE_R2_ACCESS_KEY,
+    'secret_key': CLOUDFLARE_R2_SECRET_KEY,
+    'endpoint_url': CLOUDFLARE_R2_BUCKET_ENDPOINT,
+    'default_acl': 'public-read',
+    'signature_version': 's3v4',
+
+}
+
+STORAGES={
+    'default': {
+        'BACKEND': 'helpers.cloudflare.storages.MediaFilesStorage',
+        'OPTIONS': CLOUDFLARE_R2_CONFIG_OPTIONS,
+    }, # default -> user/images/file flied upload
+    'staticfiles':{
+        'BACKEND': 'helpers.cloudflare.storages.StaticFilesStorage', #django-storages[s3]
+        'OPTIONS': CLOUDFLARE_R2_CONFIG_OPTIONS,
+    } # staticfiles -> static files
+
+}
+
+
 # Pastikan tambahkan middleware untuk white-noise
 MIDDLEWARE += ['whitenoise.middleware.WhiteNoiseMiddleware']
 # Default primary key field type
