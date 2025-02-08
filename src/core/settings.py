@@ -154,11 +154,12 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
-STATIC_URL = '/staticfiles/'
-STATICFILES_DIRS = [BASE_DIR / "staticfiles"]
+STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'staticfiles')]
 
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, "static"),  # Pastikan folder static ada
+]
 # Pastikan tambahkan middleware untuk white-noise
 MIDDLEWARE += ['whitenoise.middleware.WhiteNoiseMiddleware']
 # Default primary key field type
