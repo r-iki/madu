@@ -1,31 +1,109 @@
 {% extends "base.html" %}
 {% load socialaccount %}
 {% block title %}Login - MADU SOFTWERE{% endblock %}
-
+{% load widget_tweaks %}
 {% block content %}
-<div class="max-w-md mx-auto bg-white p-8 rounded-lg shadow-lg">
-    <h2 class="text-2xl font-bold mb-6 text-center">Login</h2>
 
-    <!-- Form Login Default -->
-    <form method="post" action="{% url 'account_login' %}" class="space-y-4">
+<div class="max-w-md mx-auto bg-white p-8 rounded-xl shadow-2xl space-y-8">
+    <!-- Header Section -->
+    <div class="text-center space-y-2">
+        <div class="mx-auto w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center shadow-lg">
+            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+            </svg>
+        </div>
+        <h2 class="text-3xl font-bold text-gray-800">Welcome Back</h2>
+        <p class="text-gray-500">Please sign in to continue</p>
+    </div>
+
+    <!-- Error Message -->
+    {% if form.non_field_errors %}
+    <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-start gap-3">
+        <svg class="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd"/>
+        </svg>
+        <div>
+            {% for error in form.non_field_errors %}
+            <p class="text-sm">{{ error }}</p>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Login Form -->
+    <form method="post" action="{% url 'account_login' %}" class="space-y-6">
         {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit" class="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700">
-            Login
+        
+        <!-- Username/Email Field -->
+        <div class="relative">
+            {% render_field form.login class="w-full px-4 py-3 rounded-lg border-2 peer"|add_error_class:"border-red-500"|add_class:"border-gray-200 focus:border-blue-500" placeholder=" " %}
+            <label for="id_login" class="absolute left-4 top-3 px-1 text-gray-500 pointer-events-none transition-all duration-200 transform origin-left 
+                        peer-placeholder-shown:translate-y-0 peer-placeholder-shown:scale-100
+                        peer-focus:-translate-y-6 peer-focus:scale-75 peer-focus:text-blue-500
+                        -translate-y-6 scale-75 bg-white">
+                Email/Username
+            </label>
+            {% if form.login.errors %}
+            <div class="text-red-500 text-sm mt-1 ml-1">
+                {% for error in form.login.errors %}
+                <p>{{ error }}</p>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Password Field -->
+        <div class="relative">
+            {% render_field form.password class="w-full px-4 py-3 rounded-lg border-2 peer"|add_error_class:"border-red-500"|add_class:"border-gray-200 focus:border-blue-500" placeholder=" " %}
+            <label for="id_password" class="absolute left-4 top-3 px-1 text-gray-500 pointer-events-none transition-all duration-200 transform origin-left 
+                        peer-placeholder-shown:translate-y-0 peer-placeholder-shown:scale-100
+                        peer-focus:-translate-y-6 peer-focus:scale-75 peer-focus:text-blue-500
+                        -translate-y-6 scale-75 bg-white">
+                Password
+            </label>
+            {% if form.password.errors %}
+            <div class="text-red-500 text-sm mt-1 ml-1">
+                {% for error in form.password.errors %}
+                <p>{{ error }}</p>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+
+        <button type="submit" class="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:from-blue-600 hover:to-blue-700 transition-all duration-300 shadow-lg hover:shadow-blue-500/30">
+            Sign In
         </button>
     </form>
 
-    <!-- Opsi Login dengan Google -->
-    <div class="mt-6 text-center">
-        <p class="mb-2">Or login with:</p>
-        <a href="{% provider_login_url 'google' %}" class="bg-red-600 text-white py-2 px-4 rounded hover:bg-red-700">
-            Login with Google
+    <!-- Social Auth Divider -->
+    <div class="relative">
+        <div class="absolute inset-0 flex items-center">
+            <div class="w-full border-t border-gray-300"></div>
+        </div>
+        <div class="relative flex justify-center text-sm">
+            <span class="px-2 bg-white text-gray-500">Or continue with</span>
+        </div>
+    </div>
+
+    <!-- Social Login Buttons -->
+    <div class="flex justify-center space-x-4">
+        <a href="{% provider_login_url 'google' %}" class="w-full flex items-center justify-center gap-2 bg-white border-2 border-gray-200 py-3 px-4 rounded-lg hover:border-blue-500 transition-colors duration-300">
+            <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+                <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                <path fill="none" d="M0 0h48v48H0z"/>
+            </svg>
+            <span class="text-gray-600 font-medium">Google</span>
         </a>
     </div>
 
-    <!-- Link ke Halaman Registrasi -->
-    <div class="mt-6 text-center">
-        <p>Don't have an account? <a href="{% url 'account_signup' %}" class="text-blue-600 hover:underline">Sign up</a></p>
-    </div>
+    <!-- Registration Link -->
+    <p class="text-center text-gray-500">
+        Don't have an account? 
+        <a href="{% url 'account_signup' %}" class="text-blue-500 font-semibold hover:underline">Sign up</a>
+    </p>
 </div>
+
 {% endblock %}

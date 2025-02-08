@@ -34,3 +34,8 @@ urlpatterns += [
 
 from django.conf.urls import handler404
 handler404 = 'core.views.custom_404_view'
+
+from . import views
+urlpatterns += [
+    path('send-test-email/', views.send_test_email),
+]

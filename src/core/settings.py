@@ -36,6 +36,7 @@ ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='*').split(',')
 
 CSRF_TRUSTED_ORIGINS = [
     'https://madu-production-8901.up.railway.app',
+    'https://app.madu.software',
 ]
 
 # Application definition
@@ -56,6 +57,7 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',  # Provider Google
+    'widget_tweaks', # Widget tweaks untuk form
     
 ]
 
@@ -153,8 +155,6 @@ SOCIALACCOUNT_PROVIDERS = {
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # Backend email untuk development
 
-ACCOUNT_AUTHENTICATION_METHOD = 'email'  # Metode autentikasi menggunakan email
-ACCOUNT_EMAIL_REQUIRED = True  # Email wajib diisi
 
 
 # Internationalization
@@ -219,3 +219,20 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 LOGIN_REDIRECT_URL = '/'  # Redirect setelah login berhasil
 LOGOUT_REDIRECT_URL = '/'  # Redirect setelah logout berhasil
+
+
+
+
+# EMAil 
+ACCOUNT_EMAIL_VERIFICATION = "mandatory"
+ACCOUNT_EMAIL_REQUIRED = True
+# ACCOUNT_AUTHENTICATION_METHOD = "email"
+
+# email configuration
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'rikimchd@gmail.com'  # Ganti dengan Gmail Anda
+EMAIL_HOST_PASSWORD = 'zigp uuiq koxg ehbq'  # App Password dari Gmail
+DEFAULT_FROM_EMAIL = 'rikimchd@gmail.com'
