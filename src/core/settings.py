@@ -34,6 +34,10 @@ DEBUG = config('DEBUG',default=False, cast=bool)
 
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='*').split(',') 
 
+CSRF_TRUSTED_ORIGINS = [
+    'https://madu-production-8901.up.railway.app',
+]
+
 # Application definition
 
 INSTALLED_APPS = [
