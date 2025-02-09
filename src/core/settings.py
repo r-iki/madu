@@ -59,6 +59,11 @@ INSTALLED_APPS = [
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',  # Provider Google
     'widget_tweaks', # Widget tweaks untuk form
+    'accounts.apps.AccountsConfig',  # Custom app untuk allauth
+    # theme
+    'tailwind',
+    'theme', 
+    'django_browser_reload', # Browser reload
     
 ]
 
@@ -70,7 +75,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'allauth.account.middleware.AccountMiddleware',  # Tambahkan ini
+    'allauth.account.middleware.AccountMiddleware',  
+    "django_browser_reload.middleware.BrowserReloadMiddleware", # Browser reload
  
 ]
 
@@ -174,11 +180,11 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
 STATIC_URL = '/static/'
-# STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
-# STATICFILES_DIRS = [
-#     os.path.join(BASE_DIR, "static"),  # Pastikan folder static ada
-# ]
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, "static"),  # Pastikan folder static ada
+]
 CLOUDFLARE_R2_BUCKET=config('CLOUDFLARE_R2_BUCKET')
 CLOUDFLARE_R2_ACCESS_KEY=config('CLOUDFLARE_R2_ACCESS_KEY')
 CLOUDFLARE_R2_SECRET_KEY=config('CLOUDFLARE_R2_SECRET_KEY')
@@ -194,18 +200,22 @@ CLOUDFLARE_R2_CONFIG_OPTIONS = {
     'signature_version': 's3v4',
 
 }
+if DEBUG:
+    # Untuk pengembangan, gunakan storage lokal
+    DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
+    STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
+else:
+    STORAGES={
+        'default': {
+            'BACKEND': 'helpers.cloudflare.storages.MediaFilesStorage',
+            'OPTIONS': CLOUDFLARE_R2_CONFIG_OPTIONS,
+        }, # default -> user/images/file flied upload
+        'staticfiles':{
+            'BACKEND': 'helpers.cloudflare.storages.StaticFilesStorage', #django-storages[s3]
+            'OPTIONS': CLOUDFLARE_R2_CONFIG_OPTIONS,
+        } # staticfiles -> static files
 
-STORAGES={
-    'default': {
-        'BACKEND': 'helpers.cloudflare.storages.MediaFilesStorage',
-        'OPTIONS': CLOUDFLARE_R2_CONFIG_OPTIONS,
-    }, # default -> user/images/file flied upload
-    'staticfiles':{
-        'BACKEND': 'helpers.cloudflare.storages.StaticFilesStorage', #django-storages[s3]
-        'OPTIONS': CLOUDFLARE_R2_CONFIG_OPTIONS,
-    } # staticfiles -> static files
-
-}
+    }
 
 
 # Pastikan tambahkan middleware untuk white-noise
@@ -239,5 +249,31 @@ EMAIL_HOST_PASSWORD = 'zigp uuiq koxg ehbq'  # App Password dari Gmail
 DEFAULT_FROM_EMAIL = 'rikimchd@gmail.com'
 
 
-
 ASGI_APPLICATION = 'core.routing.application' # Routing file untuk Channels
+
+
+# UI
+TAILWIND_APP_NAME = 'theme'
+INTERNAL_IPS = [
+    "127.0.0.1",
+]
+NPM_BIN_PATH = 'npm.cmd'
+
+
+# websoket 
+if DEBUG:
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels.layers.InMemoryChannelLayer",
+        },
+    }
+else:
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels_redis.core.RedisChannelLayer",
+            "CONFIG": {
+                "hosts": [os.environ.get("REDIS_URL", "redis://localhost:6379")],
+            },
+        },
+    }
+

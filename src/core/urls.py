@@ -20,15 +20,18 @@ from django.urls import path, include
 from sensors.views import sensor_data_api
 
 urlpatterns = [
+    path("__reload__/", include("django_browser_reload.urls")),
     path('accounts/', include('allauth.urls')),
     path('admin/', admin.site.urls),
     path('api/sensor-data/', sensor_data_api, name='sensor-data-api'),
+    path('accounts/', include('accounts.urls')),
+    
 ]
 
 from dashboard.views import dashboard_view
 
 urlpatterns += [
-    path('', dashboard_view),
+    path('', dashboard_view, name='dashboard'),
 ]
 
 
