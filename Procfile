@@ -1,4 +1,1 @@
-web: uvicorn core.asgi:application --chdir src --bind 0.0.0.0:$PORT
-
-
-
+web: daphne core.asgi:application --chdir src --port $PORT --bind 0.0.0.0 --proxy-headers
