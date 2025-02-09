@@ -25,8 +25,11 @@
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 <script>
 // Buka koneksi WebSocket ke endpoint sensor
-const ws = new WebSocket('ws://' + window.location.host + '/ws/sensor/');
-
+if (window.location.protocol === 'http:') {
+  var ws = new WebSocket('ws://' + window.location.host + '/ws/sensor/');
+} else {
+  var ws = new WebSocket('wss://' + window.location.host + '/ws/sensor/');
+}
 // Array x untuk garis penghubung (seluruh titik, sorted berdasarkan wavelength)
 const xLine = [410, 435, 460, 485, 510, 535, 560, 585, 610, 645, 680, 705, 730, 760, 810, 860, 900, 940];
 
