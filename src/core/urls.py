@@ -17,12 +17,12 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import path, include
-from sensors.views import save_sensor_data
+from sensors.views import sensor_data_api
 
 urlpatterns = [
     path('accounts/', include('allauth.urls')),
     path('admin/', admin.site.urls),
-    path('api/sensor-data/', save_sensor_data),
+    path('api/sensor-data/', sensor_data_api, name='sensor-data-api'),
 ]
 
 from dashboard.views import dashboard_view
