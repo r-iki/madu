@@ -200,12 +200,24 @@ CLOUDFLARE_R2_CONFIG_OPTIONS = {
     'signature_version': 's3v4',
 
 }
-if DEBUG:
-    # Untuk pengembangan, gunakan storage lokal
-    DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
-    STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
-else:
-    STORAGES={
+# if DEBUG:
+#     # Untuk pengembangan, gunakan storage lokal
+#     DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
+#     STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
+# else:
+#     STORAGES={
+#         'default': {
+#             'BACKEND': 'helpers.cloudflare.storages.MediaFilesStorage',
+#             'OPTIONS': CLOUDFLARE_R2_CONFIG_OPTIONS,
+#         }, # default -> user/images/file flied upload
+#         'staticfiles':{
+#             'BACKEND': 'helpers.cloudflare.storages.StaticFilesStorage', #django-storages[s3]
+#             'OPTIONS': CLOUDFLARE_R2_CONFIG_OPTIONS,
+#         } # staticfiles -> static files
+
+#     }
+
+STORAGES={
         'default': {
             'BACKEND': 'helpers.cloudflare.storages.MediaFilesStorage',
             'OPTIONS': CLOUDFLARE_R2_CONFIG_OPTIONS,
@@ -214,8 +226,7 @@ else:
             'BACKEND': 'helpers.cloudflare.storages.StaticFilesStorage', #django-storages[s3]
             'OPTIONS': CLOUDFLARE_R2_CONFIG_OPTIONS,
         } # staticfiles -> static files
-
-    }
+}
 
 
 # Pastikan tambahkan middleware untuk white-noise
