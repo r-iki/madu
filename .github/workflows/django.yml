@@ -26,5 +26,5 @@ jobs:
 
       - name: Build Tailwind CSS & Upload Static
         run: |
-          python manage.py tailwind build
-          python manage.py collectstatic --noinput
+          python src/manage.py tailwind build
+          python src/manage.py collectstatic --noinput
