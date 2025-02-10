@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block title %}Home - My Django App{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-lg">
+    <h2 class="text-2xl font-bold mb-6 text-center">Welcome, {{ user.username }}!</h2>
+
+    <!-- Konten Beranda -->
+    <p class="text-center">You are now logged in. Explore the app!</p>
+
+    <!-- Tombol Logout -->
+    <div class="mt-6 text-center">
+        <a href="{% url 'account_logout' %}" class="bg-red-600 text-white py-2 px-4 rounded hover:bg-red-700">
+            Logout
+        </a>
+    </div>
+</div>
+{% endblock %}
