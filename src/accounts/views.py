@@ -1,9 +1,17 @@
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ObjectDoesNotExist
 from .forms import ProfileForm  
+from .models import Profile
 
 @login_required
 def profile_view(request):
+    if request.user.is_authenticated:
+        try:
+            profile = request.user.profile
+        except ObjectDoesNotExist:
+            # Buat profil otomatis jika tidak ada
+            profile = Profile.objects.create(user=request.user)
     # Mengambil data profil pengguna dari user terkait
     profile = request.user.profile
     context = {

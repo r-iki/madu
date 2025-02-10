@@ -8,3 +8,7 @@ class StaticFilesStorage(S3Boto3Storage):
 class MediaFilesStorage(S3Boto3Storage):
     #  helpers.cloudflare.storages.MediaFilesStorage
     location = 'media'    # lokasi file media
+
+class ProtectedFileStorages(S3Boto3Storage):
+    #  helpers.cloudflare.storages.ProtectedFileStorages
+    location = 'protected'    # lokasi file protected
