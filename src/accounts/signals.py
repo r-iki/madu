@@ -9,4 +9,4 @@ def create_or_update_user_profile(sender, instance, created, **kwargs):
         Profile.objects.create(user=instance)
     else:
         # Jika User sudah ada dan disimpan kembali, simpan juga Profile-nya
-        instance.Profile.save()
+        instance.profile.save()
