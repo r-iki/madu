@@ -37,6 +37,7 @@ ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='*').split(',')
 CSRF_TRUSTED_ORIGINS = [
     'https://madu-production-8901.up.railway.app',
     'https://app.madu.software',
+    'https://madu.software',
 ]
 
 # Application definition
