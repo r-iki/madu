@@ -38,6 +38,7 @@ CSRF_TRUSTED_ORIGINS = [
     'https://madu-production-8901.up.railway.app',
     'https://app.madu.software',
     'https://madu.software',
+    'https://media.madu.software',
 ]
 
 # Application definition
@@ -191,6 +192,7 @@ CLOUDFLARE_R2_ACCESS_KEY=config('CLOUDFLARE_R2_ACCESS_KEY')
 CLOUDFLARE_R2_SECRET_KEY=config('CLOUDFLARE_R2_SECRET_KEY')
 CLOUDFLARE_R2_BUCKET_ENDPOINT= config('CLOUDFLARE_R2_BUCKET_ENDPOINT')
 
+MEDIA_URL = 'https://media.madu.software/'
 
 CLOUDFLARE_R2_CONFIG_OPTIONS = {
     'bucket_name': CLOUDFLARE_R2_BUCKET,

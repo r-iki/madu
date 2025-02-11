@@ -2,24 +2,14 @@ from django.shortcuts import render
 from sensors.models import SpectralReading
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-from accounts.models import Profile
-
 
 @login_required
 def dashboard_view(request):
     # Ambil data terakhir untuk inisialisasi
-    user_profile = Profile.objects.get(user=request.user)
-    user = request.user 
-
     latest_data = SpectralReading.objects.last()
+    profile=request.user.profile
     context = {
-        "user_name": request.user.username,
-        "bio": user_profile.bio,
-        "email": user.email,
-        "profile_picture": user_profile.image.url if user_profile.image else None,
-
-
-
+        'profile': profile,
         'spectral_data': {
             # Ultraviolet (AS72653)
             'uv_410': latest_data.uv_410 if latest_data else 0,
@@ -44,4 +34,4 @@ def dashboard_view(request):
             'nir_860': latest_data.nir_860 if latest_data else 0,
         }
     }
-    return render(request, 'dashboard.html', context)
+    return render(request, 'dashboard.html', context,)
