@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% load socialaccount %}
+{% load allauth i18n %}
+{% block title %}{% trans "Sign Out" %}{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto bg-white p-8 rounded-xl shadow-2xl space-y-8 w-full  text-center">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="mb-4 p-3 text-white rounded {{ message.tags }} bg-{{ message.tags }}-500">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+        
+        <h1 class="text-3xl font-bold text-gray-800">{% trans "Sign Out" %}</h1>
+        <p class="mt-3 text-gray-600">{% trans 'Are you sure you want to sign out?' %}</p>
+        
+        {% url 'account_logout' as action_url %}
+        <form method="post" action="{{ action_url }}" class="mt-6">
+            {% csrf_token %}
+            {{ redirect_field }}
+            <button type="submit" class="w-full bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition">{% trans 'Sign Out' %}</button>
+        </form>
+        
+        <a href="{% url 'account_login' %}" class="mt-4 inline-block text-blue-600 hover:underline">{% trans 'Cancel' %}</a>
+    </div>
+{% endblock %}

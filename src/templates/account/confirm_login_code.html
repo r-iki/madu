@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load allauth account %}
+{% block head_title %}
+    {% translate "Sign In" %}
+{% endblock head_title %}
+{% block content %}
+<div class="flex items-center justify-center min-h-screen bg-gray-100">
+    <div class="w-full max-w-md p-6 bg-white rounded-lg shadow-lg">
+        <h1 class="text-2xl font-semibold text-gray-700 text-center">{% translate "Enter Sign-In Code" %}</h1>
+        
+        <p class="mt-2 text-gray-600 text-center">
+            {% blocktranslate %}We’ve sent a code to <a href="mailto:{{ email }}" class="text-blue-500 hover:underline">{{ email }}</a>. The code expires shortly, so please enter it soon.{% endblocktranslate %}
+        </p>
+        
+        {% url 'account_confirm_login_code' as login_url %}
+        <form method="post" action="{{ login_url }}" class="mt-4 space-y-4">
+            {% csrf_token %}
+            {% element fields form=form unlabeled=True %}
+            {% endelement %}
+            {{ redirect_field }}
+            
+            <button type="submit" class="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition duration-300">
+                {% translate "Sign In" %}
+            </button>
+        </form>
+        
+        <form id="logout-from-stage" method="post" action="{% url 'account_logout' %}" class="mt-4 text-center">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{% url 'account_login' %}">
+            <button type="submit" class="text-red-500 hover:underline">{% translate "Cancel" %}</button>
+        </form>
+    </div>
+</div>
+{% endblock content %}

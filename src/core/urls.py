@@ -14,7 +14,8 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-
+from django.conf import settings
+from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include
 from sensors.views import sensor_data_api
@@ -25,7 +26,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/sensor-data/', sensor_data_api, name='sensor-data-api'),
     path('accounts/', include('accounts.urls')),
-    
 ]
 
 from dashboard.views import dashboard_view
@@ -42,3 +42,6 @@ from . import views
 urlpatterns += [
     path('send-test-email/', views.send_test_email),
 ]
+
+
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

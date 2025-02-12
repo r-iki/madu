@@ -34,4 +34,5 @@ def dashboard_view(request):
             'nir_860': latest_data.nir_860 if latest_data else 0,
         }
     }
+    print(latest_data)
     return render(request, 'dashboard.html', context,)
