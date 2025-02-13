@@ -1,38 +1,56 @@
-from django.shortcuts import render
-from sensors.models import SpectralReading
+from django.shortcuts import render, get_object_or_404
+from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.models import User
+from django.views.decorators.csrf import csrf_exempt
+from sensors.models import SpectralReading
+from django.http import JsonResponse
+import json
+from datetime import datetime
 
 @login_required
 def dashboard_view(request):
-    # Ambil data terakhir untuk inisialisasi
-    latest_data = SpectralReading.objects.last()
-    profile=request.user.profile
+    # Ambil 50 data terbaru
+    readings = SpectralReading.objects.order_by('-timestamp')
+
     context = {
-        'profile': profile,
-        'spectral_data': {
-            # Ultraviolet (AS72653)
-            'uv_410': latest_data.uv_410 if latest_data else 0,
-            'uv_435': latest_data.uv_435 if latest_data else 0,
-            'uv_460': latest_data.uv_460 if latest_data else 0,
-            'uv_485': latest_data.uv_485 if latest_data else 0,
-            'uv_510': latest_data.uv_510 if latest_data else 0,
-            'uv_535': latest_data.uv_535 if latest_data else 0,
-            # Visible (AS72652)
-            'vis_560': latest_data.vis_560 if latest_data else 0,
-            'vis_585': latest_data.vis_585 if latest_data else 0,
-            'vis_645': latest_data.vis_645 if latest_data else 0,
-            'vis_705': latest_data.vis_705 if latest_data else 0,
-            'vis_900': latest_data.vis_900 if latest_data else 0,
-            'vis_940': latest_data.vis_940 if latest_data else 0,
-            # Near Infrared (AS72651)
-            'nir_610': latest_data.nir_610 if latest_data else 0,
-            'nir_680': latest_data.nir_680 if latest_data else 0,
-            'nir_730': latest_data.nir_730 if latest_data else 0,
-            'nir_760': latest_data.nir_760 if latest_data else 0,
-            'nir_810': latest_data.nir_810 if latest_data else 0,
-            'nir_860': latest_data.nir_860 if latest_data else 0,
-        }
+        'readings': readings,
     }
-    print(latest_data)
-    return render(request, 'dashboard.html', context,)
+    return render(request, 'dashboard.html', context)
+from django.http import JsonResponse
+import json
+
+@csrf_exempt
+def update_sensor_data(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            reading_id = data.pop('id', None)  # Ambil ID, hapus dari data untuk mencegah update tidak disengaja
+
+            if not reading_id:
+                return JsonResponse({'status': 'error', 'message': 'ID tidak ditemukan'}, status=400)
+
+            reading = SpectralReading.objects.get(id=reading_id)
+
+            # Hapus data yang tidak valid
+            data.pop("null", None)  # Hapus key "null" jika ada
+
+            # Perbarui hanya field yang dikirim dalam request
+            for field, value in data.items():
+                if hasattr(reading, field):  # Pastikan field ada dalam model
+                    if field == 'name':  # Pastikan 'name' selalu string
+                        value = str(value) if value else "Unknown"
+                    elif field == 'timestamp':  # Konversi string ke datetime
+                        try:
+                            value = datetime.strptime(value, "%Y-%m-%d %H:%M:%S")
+                        except ValueError:
+                            return JsonResponse({'status': 'error', 'message': 'Format timestamp tidak valid'}, status=400)
+                    setattr(reading, field, value)
+
+            reading.save()
+
+            return JsonResponse({'status': 'success', 'message': 'Data berhasil diperbarui!'})
+        except SpectralReading.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'Data tidak ditemukan'}, status=404)
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+    return JsonResponse({'status': 'error', 'message': 'Metode tidak diizinkan'}, status=405)

@@ -19,6 +19,7 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include
 from sensors.views import sensor_data_api
+from dashboard.views import update_sensor_data
 
 urlpatterns = [
     path("__reload__/", include("django_browser_reload.urls")),
@@ -26,6 +27,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/sensor-data/', sensor_data_api, name='sensor-data-api'),
     path('accounts/', include('accounts.urls')),
+    path('update-sensor/', update_sensor_data, name='update_sensor'),
 ]
 
 from dashboard.views import dashboard_view
