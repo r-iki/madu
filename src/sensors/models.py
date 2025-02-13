@@ -5,7 +5,7 @@ from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 
 class SpectralReading(models.Model):
-    timestamp = models.DateTimeField()
+    timestamp = models.DateTimeField(auto_now_add=True)
     name = models.CharField(max_length=255, blank=True, null=False, default="Unknown")
     
     # Ultraviolet (AS72653)
