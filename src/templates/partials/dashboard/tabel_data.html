@@ -1,5 +1,5 @@
 <div class="flex justify-between items-center mb-4">
-    <h1 class="text-2xl font-bold">Dashboard Sensor</h1>
+    <h1 class="text-2xl font-bold">Dashboard Sensor AS7265X</h1>
     <div class="flex gap-2">
         <button id="exportCSV" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded shadow">
             Export CSV
@@ -206,5 +206,22 @@ document.querySelectorAll('.save-row').forEach(button => {
         .catch(error => console.error('Terjadi kesalahan:', error));
     });
 });
+
+
+if (window.location.protocol === 'http:') {
+  var ws = new WebSocket('ws://' + window.location.host + '/ws/sensor/');
+} else {
+  var ws = new WebSocket('wss://' + window.location.host + '/ws/sensor/');
+}
+socket.onmessage = function(event) {
+    const data = JSON.parse(event.data);
+    updateOrAddRow(data.data);
+};
+
+socket.onerror = function(error) {
+    console.error("WebSocket Error:", error);
+};
+
+
 
 </script>
