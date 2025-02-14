@@ -6,7 +6,7 @@ from asgiref.sync import async_to_sync
 
 class SpectralReading(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
-    name = models.CharField(max_length=255, blank=True, null=False, default="Unknown")
+    name = models.CharField(max_length=255, blank=True, null=False, )
     
     # Ultraviolet (AS72653)
     uv_410 = models.FloatField()
