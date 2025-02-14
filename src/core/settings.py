@@ -181,9 +181,9 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
-STATIC_URL = 'https://media.madu.software/static/'
+STATIC_URL = 'https://static.madu.software/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-MEDIA_URL = 'https://media.madu.software/media/'
+MEDIA_URL = 'https://media.madu.software/'
 
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "static"),  # Pastikan folder static ada
