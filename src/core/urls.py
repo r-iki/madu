@@ -28,7 +28,7 @@ urlpatterns = [
     path('api/sensor-data/', sensor_data_api, name='sensor-data-api'),
     path('accounts/', include('accounts.urls')),
     path('update-sensor/', update_sensor_data, name='update_sensor'),
-]
+]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 from dashboard.views import dashboard_view
 
@@ -44,6 +44,3 @@ from . import views
 urlpatterns += [
     path('send-test-email/', views.send_test_email),
 ]
-
-
-urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

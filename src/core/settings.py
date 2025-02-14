@@ -181,8 +181,9 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
-STATIC_URL = '/static/'
+STATIC_URL = 'https://media.madu.software/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+MEDIA_URL = 'https://media.madu.software/media/'
 
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "static"),  # Pastikan folder static ada
@@ -192,7 +193,6 @@ CLOUDFLARE_R2_ACCESS_KEY=config('CLOUDFLARE_R2_ACCESS_KEY')
 CLOUDFLARE_R2_SECRET_KEY=config('CLOUDFLARE_R2_SECRET_KEY')
 CLOUDFLARE_R2_BUCKET_ENDPOINT= config('CLOUDFLARE_R2_BUCKET_ENDPOINT')
 
-MEDIA_URL = 'https://media.madu.software/'
 
 CLOUDFLARE_R2_CONFIG_OPTIONS = {
     'bucket_name': CLOUDFLARE_R2_BUCKET,
