@@ -15,7 +15,7 @@
                     <th rowspan="2" class="p-3 border border-gray-200 whitespace-nowrap">
                         <input type="checkbox" id="select-all" class="w-4 h-4">
                     </th>
-                    <th rowspan="2" class="p-3 border border-gray-200 whitespace-nowrap">Nama</th>
+                    <th rowspan="2" class="p-3 border border-gray-200 whitespace-nowrap">LABELS</th>
                     <th rowspan="2" class="p-3 border border-gray-200 whitespace-nowrap">Waktu</th>
                     <th colspan="6" class="p-3 border border-gray-200 text-center whitespace-nowrap">Sensor AS72651</th>
                     <th colspan="6" class="p-3 border border-gray-200 text-center whitespace-nowrap">Sensor AS72652</th>
@@ -93,7 +93,7 @@ document.getElementById('select-all').addEventListener('change', function () {
 // Fungsi Export CSV Hanya untuk Data yang Dipilih
 document.getElementById('exportCSV').addEventListener('click', function () {
     let selectedRows = document.querySelectorAll('.row-check:checked');
-    
+
     if (selectedRows.length === 0) {
         alert("Pilih setidaknya satu data untuk diekspor!");
         return;
@@ -101,16 +101,34 @@ document.getElementById('exportCSV').addEventListener('click', function () {
 
     let table = document.getElementById("sensorTable");
     let csvContent = "data:text/csv;charset=utf-8,";
-    let headers = ["Nama", "Waktu", "410 nm", "435 nm", "460 nm", "485 nm", "510 nm", "535 nm", 
+    let headers = ["LABELS", "Waktu", "410 nm", "435 nm", "460 nm", "485 nm", "510 nm", "535 nm", 
                    "560 nm", "585 nm", "645 nm", "705 nm", "900 nm", "940 nm", 
                    "610 nm", "680 nm", "730 nm", "760 nm", "810 nm", "860 nm"];
+
+
+    // Ambil semua header dari thead
     
+    let headers = [];
+
+    headerCells.forEach((th, index) => {
+        if (index > 0 && index < headerCells.length - 1) { // Hindari checkbox & kolom aksi
+            headers.push(th.innerText.trim());
+        }
+    });
+
     csvContent += headers.join(",") + "\n";
 
     selectedRows.forEach(checkbox => {
         let row = checkbox.closest("tr");
-        let cols = row.querySelectorAll("td:not(:first-child)");
-        let rowData = Array.from(cols).map(col => col.innerText);
+        let cols = row.querySelectorAll("td");
+        let rowData = [];
+
+        cols.forEach((col, index) => {
+            if (index > 0 && index < cols.length - 1) { // Hindari checkbox & kolom aksi
+                rowData.push(col.innerText.trim());
+            }
+        });
+
         csvContent += rowData.join(",") + "\n";
     });
 
@@ -122,6 +140,7 @@ document.getElementById('exportCSV').addEventListener('click', function () {
     link.click();
     document.body.removeChild(link);
 });
+
 
 
 

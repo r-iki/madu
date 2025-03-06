@@ -1,0 +1,95 @@
+{% comment %} {% extends "base.html" %} {% endcomment %}
+{% comment %} {% block title %}Bluetooth {% endblock %}
+{% load static %} {% endcomment %}
+
+{% block content %}
+  <body class="bg-gray-100 flex justify-center items-center min-h-screen">
+
+    <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-lg">
+        <h1 class="text-2xl font-semibold text-gray-700 text-center mb-4">ESP32 WiFi Setup</h1>
+
+        <!-- Status Koneksi -->
+        <div class="flex items-center justify-between bg-gray-200 p-3 rounded-lg">
+            <span id="status" class="text-gray-700">Status: Tidak terhubung</span>
+            <button onclick="connectToESP32()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                Hubungkan ke ESP32
+            </button>
+        </div>
+
+        <!-- Daftar WiFi -->
+        <div class="mt-4">
+            <h2 class="text-lg font-semibold text-gray-700 mb-2">Daftar WiFi</h2>
+            <ul id="wifi-list" class="space-y-2"></ul>
+        </div>
+
+        <!-- Form Pilih WiFi -->
+        <div class="mt-4">
+            <h2 class="text-lg font-semibold text-gray-700 mb-2">Connect to WiFi</h2>
+            <input type="text" id="ssid" class="w-full p-2 border rounded-lg mb-2" placeholder="SSID">
+            <input type="password" id="password" class="w-full p-2 border rounded-lg mb-2" placeholder="Password">
+            <button onclick="sendWiFi()" class="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+                Hubungkan
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let device, server, wifiStatusChar, wifiScanChar, wifiSelectChar;
+
+        async function connectToESP32() {
+            try {
+                console.log("Mencari perangkat Bluetooth...");
+                device = await navigator.bluetooth.requestDevice({
+                    acceptAllDevices: true,
+                    optionalServices: []
+                });
+
+                server = await device.gatt.connect();
+                console.log("Terhubung ke", device.name);
+                document.getElementById("status").innerText = "Status: Terhubung";
+
+                const services = await server.getPrimaryServices();
+                console.log("UUID Layanan ESP32:", services.map(s => s.uuid));
+
+                const service = services[0];
+                const characteristics = await service.getCharacteristics();
+
+                wifiStatusChar = characteristics.find(c => c.uuid.includes("01"));
+                wifiScanChar = characteristics.find(c => c.uuid.includes("02"));
+                wifiSelectChar = characteristics.find(c => c.uuid.includes("03"));
+
+                updateWiFiList();
+            } catch (error) {
+                console.error("Gagal terhubung:", error);
+            }
+        }
+
+        async function updateWiFiList() {
+            if (!wifiScanChar) return;
+            const value = await wifiScanChar.readValue();
+            const decoder = new TextDecoder("utf-8");
+            const wifiList = decoder.decode(value).split("\n");
+
+            const wifiListEl = document.getElementById("wifi-list");
+            wifiListEl.innerHTML = "";
+            wifiList.forEach(ssid => {
+                if (ssid) {
+                    let li = document.createElement("li");
+                    li.innerText = ssid;
+                    li.classList = "p-2 bg-gray-200 rounded-lg cursor-pointer hover:bg-gray-300";
+                    li.onclick = () => document.getElementById("ssid").value = ssid;
+                    wifiListEl.appendChild(li);
+                }
+            });
+        }
+
+        async function sendWiFi() {
+            if (!wifiSelectChar) return;
+            const ssid = document.getElementById("ssid").value;
+            const password = document.getElementById("password").value;
+            const data = new TextEncoder().encode(`${ssid}|${password}`);
+            await wifiSelectChar.writeValue(data);
+            console.log("SSID dan Password dikirim!");
+        }
+    </script>
+{% endblock %}

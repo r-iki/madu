@@ -250,9 +250,12 @@ LOGOUT_REDIRECT_URL = '/'  # Redirect setelah logout berhasil
 
 # EMAil 
 ACCOUNT_EMAIL_VERIFICATION = "optional"
-ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_AUTHENTICATION_METHOD = "username_email"  # Bisa login dengan username atau email
+ACCOUNT_EMAIL_REQUIRED = True  # Email wajib diisi saat registrasi
+ACCOUNT_USERNAME_REQUIRED = True  # Username juga wajib
 
 # ACCOUNT_AUTHENTICATION_METHOD = "email"
+ACCOUNT_ADAPTER = "accounts.adapter.MyAccountAdapter"
 
 # email configuration
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
