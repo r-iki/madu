@@ -9,7 +9,7 @@ def sensor_data_api(request):
         try:
             data = json.loads(request.body)
             
-            # Validasi data: pastikan semua field yang diperlukan tersedia
+            # Validate data: ensure all required fields are present
             required_fields = [
                 'name',
                 # Ultraviolet (AS72653)
@@ -23,7 +23,7 @@ def sensor_data_api(request):
             if not all(field in data for field in required_fields):
                 return JsonResponse({'status': 'error', 'message': 'Missing fields'}, status=400)
             
-            # Simpan data ke database
+            # Save data to the database
             reading = SpectralReading.objects.create(
                 name=data['name'],
                 # Ultraviolet
@@ -51,6 +51,17 @@ def sensor_data_api(request):
             
             return JsonResponse({'status': 'success', 'id': reading.id})
             
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+    
+    return JsonResponse({'status': 'error', 'message': 'Invalid method'}, status=405)
+
+@csrf_exempt
+def get_sensor_data(request):
+    if request.method == 'GET':
+        try:
+            readings = SpectralReading.objects.all().values()
+            return JsonResponse(list(readings), safe=False)
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
     
