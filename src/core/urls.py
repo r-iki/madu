@@ -18,7 +18,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include
-from sensors.views import sensor_data_api
+from sensors.views import sensor_data_api,get_sensor_data
 from dashboard.views import update_sensor_data
 
 urlpatterns = [
@@ -28,6 +28,7 @@ urlpatterns = [
     path('api/sensor-data/', sensor_data_api, name='sensor-data-api'),
     path('accounts/', include('accounts.urls')),
     path('update-sensor/', update_sensor_data, name='update_sensor'),
+    path('get_sensor_data/', get_sensor_data, name='get_sensor_data'),
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 from dashboard.views import dashboard_view
