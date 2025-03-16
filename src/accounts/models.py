@@ -26,10 +26,10 @@ def csv_file_upload(instance,filepath):
 
 
 class Profile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    # Tambahkan field tambahan sesuai kebutuhan
-    bio = models.TextField(blank=True)
-    image = models.ImageField(upload_to=images_file_upload, default='default-profile.png')
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
+    bio = models.TextField(blank=True, null=True)
+    avatar = models.ImageField(upload_to="avatars/", blank=True, null=True)  # Untuk upload gambar
+    google_avatar_url = models.URLField(blank=True, null=True)  # URL gambar dari Google
 
     def __str__(self):
-        return f"{self.user.username}'s profile"
+        return f"Profile of {self.user.username}"

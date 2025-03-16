@@ -6,7 +6,7 @@
     <h1 class="text-2xl font-bold mb-4">My Profile</h1>
     <div class="flex items-center mb-6">
         {% if profile.image %}
-            <img src="{{ profile.image.url }}" alt="Profile Picture" class="w-24 h-24 rounded-full mr-4">
+            <img src="{{ profile.avatar.url if profile.avatar else profile.google_avatar_url }}" alt="Profile Picture" class="w-24 h-24 rounded-full mr-4">
         {% else %}
             <img src="https://via.placeholder.com/150" alt="Profile Picture" class="w-24 h-24 rounded-full mr-4">
         {% endif %}

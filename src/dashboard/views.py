@@ -54,3 +54,25 @@ def update_sensor_data(request):
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
     return JsonResponse({'status': 'error', 'message': 'Metode tidak diizinkan'}, status=405)
+
+@csrf_exempt
+def update_data_name_batch(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            ids = data.get('ids', [])  # Ambil daftar ID
+            new_name = data.get('name', None)  # Ambil nama baru
+
+            if not ids or not new_name:
+                return JsonResponse({'status': 'error', 'message': 'IDs atau nama baru tidak ditemukan'}, status=400)
+
+            # Perbarui nama untuk semua ID yang diberikan
+            updated_count = SpectralReading.objects.filter(id__in=ids).update(name=new_name)
+
+            if updated_count == 0:
+                return JsonResponse({'status': 'error', 'message': 'Tidak ada data yang diperbarui'}, status=404)
+
+            return JsonResponse({'status': 'success', 'message': f'{updated_count} data berhasil diperbarui!'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+    return JsonResponse({'status': 'error', 'message': 'Metode tidak diizinkan'}, status=405)

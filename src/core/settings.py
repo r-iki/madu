@@ -255,8 +255,8 @@ ACCOUNT_EMAIL_REQUIRED = True  # Email wajib diisi saat registrasi
 ACCOUNT_USERNAME_REQUIRED = True  # Username juga wajib
 
 # ACCOUNT_AUTHENTICATION_METHOD = "email"
-ACCOUNT_ADAPTER = "accounts.adapter.MyAccountAdapter"
-
+ACCOUNT_ADAPTER = "accounts.adapters.MyAccountAdapter"
+SOCIALACCOUNT_ADAPTER = 'accounts.adapters.MySocialAccountAdapter'
 # email configuration
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
@@ -285,4 +285,6 @@ CHANNEL_LAYERS = {
         "BACKEND": "channels.layers.InMemoryChannelLayer",
     },
 }
+
+
 

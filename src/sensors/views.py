@@ -17,7 +17,9 @@ def sensor_data_api(request):
                 # Visible (AS72652)
                 'vis_560', 'vis_585', 'vis_645', 'vis_705', 'vis_900', 'vis_940',
                 # Near Infrared (AS72651)
-                'nir_610', 'nir_680', 'nir_730', 'nir_760', 'nir_810', 'nir_860'
+                'nir_610', 'nir_680', 'nir_730', 'nir_760', 'nir_810', 'nir_860',
+                # Temperature
+                'temperature'  # Updated field name
             ]
             
             if not all(field in data for field in required_fields):
@@ -47,6 +49,8 @@ def sensor_data_api(request):
                 nir_760=data['nir_760'],
                 nir_810=data['nir_810'],
                 nir_860=data['nir_860'],
+                # Temperature
+                temperature=data['temperature']  # Updated field name
             )
             
             return JsonResponse({'status': 'success', 'id': reading.id})

@@ -6,6 +6,12 @@ from .models import Profile
 
 @login_required
 def profile_view(request):
+    user = request.user
+    try:
+        profile = user.profile
+    except ObjectDoesNotExist:
+        # Buat profil jika tidak ada
+        profile = Profile.objects.create(user=user)
     if request.user.is_authenticated:
         try:
             profile = request.user.profile

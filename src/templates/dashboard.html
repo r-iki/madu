@@ -15,7 +15,7 @@
           <div id="spectralChart"></div>
         </div>
       </div>
-      {% include 'bluetooth.html'%}
+      {% comment %} {% include 'bluetooth.html'%} {% endcomment %}
       {% include 'partials/dashboard/tabel_data.html'%}
     </div>
   </div>
@@ -156,5 +156,18 @@ ws.onmessage = function(e) {
     }
   });
 };
+
+document.addEventListener('DOMContentLoaded', function () {
+    const exportButton = document.getElementById('exportCSV');
+    console.log("Export CSV Button:", exportButton);
+
+    if (exportButton) {
+        exportButton.addEventListener('click', function () {
+            console.log("Export CSV clicked!");
+        });
+    } else {
+        console.error("Export CSV button not found!");
+    }
+});
 </script>
 {% endblock %}

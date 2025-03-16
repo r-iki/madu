@@ -1,6 +1,7 @@
 <div class="flex justify-between items-center mb-4">
     <h1 class="text-2xl font-bold">Tabel Data Dari Sensor AS7265X</h1>
     <div class="flex gap-2">
+        <button id="batchRenameBtn" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded shadowy">Batch Rename</button>
         <button id="exportCSV" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded shadow">
             Export CSV
         </button>
@@ -15,11 +16,17 @@
                     <th rowspan="2" class="p-3 border border-gray-200 whitespace-nowrap">
                         <input type="checkbox" id="select-all" class="w-4 h-4">
                     </th>
-                    <th rowspan="2" class="p-3 border border-gray-200 whitespace-nowrap">LABELS</th>
+                    <th rowspan="2" class="p-3 border border-gray-200 whitespace-nowrap">
+                        LABELS
+                        <button id="sortLabels" class="ml-2 text-gray-500 hover:text-gray-700">
+                            &#9650; <!-- Panah ke atas untuk A-Z -->
+                        </button>
+                    </th>
                     <th rowspan="2" class="p-3 border border-gray-200 whitespace-nowrap">Waktu</th>
                     <th colspan="6" class="p-3 border border-gray-200 text-center whitespace-nowrap">Sensor AS72651</th>
                     <th colspan="6" class="p-3 border border-gray-200 text-center whitespace-nowrap">Sensor AS72652</th>
                     <th colspan="6" class="p-3 border border-gray-200 text-center whitespace-nowrap">Sensor AS72653</th>
+                    <th rowspan="2" class="p-3 border border-gray-200 whitespace-nowrap">Temperature</th>
                     <th rowspan="2" class="p-3 border border-gray-200 whitespace-nowrap">Aksi</th>
                 </tr>
                 <tr>
@@ -71,6 +78,7 @@
         <td class="p-2 border border-gray-200" data-field="nir_760">{{ reading.nir_760 }}</td>
         <td class="p-2 border border-gray-200" data-field="nir_810">{{ reading.nir_810 }}</td>
         <td class="p-2 border border-gray-200" data-field="nir_860">{{ reading.nir_860 }}</td>
+        <td class="p-2 border border-gray-200" data-field="temperature">{{ reading.temperature }}</td>
         <td class="p-3 border border-gray-200">
             <button class="edit-row bg-yellow-500 text-white px-2 py-1 rounded">Edit</button>
             <button class="save-row bg-blue-500 text-white px-2 py-1 rounded hidden">Simpan</button>
@@ -84,6 +92,12 @@
 </div>
 
 <script>
+document.addEventListener("DOMContentLoaded", function () {
+    console.log("Batch Rename Button:", document.getElementById("batchRenameBtn"));
+    console.log("Export CSV Button:", document.getElementById("exportCSV"));
+    console.log("Select All Checkbox:", document.getElementById("select-all"));
+    console.log("Row Checkboxes:", document.querySelectorAll(".row-check"));
+});
 // Fungsi Select All Checkbox
 document.getElementById('select-all').addEventListener('change', function () {
     let checkboxes = document.querySelectorAll('.row-check');
@@ -101,20 +115,10 @@ document.getElementById('exportCSV').addEventListener('click', function () {
 
     let table = document.getElementById("sensorTable");
     let csvContent = "data:text/csv;charset=utf-8,";
-    let headers = ["LABELS", "Waktu", "410 nm", "435 nm", "460 nm", "485 nm", "510 nm", "535 nm", 
+    let headers = ["Labels", "Waktu", "410 nm", "435 nm", "460 nm", "485 nm", "510 nm", "535 nm", 
                    "560 nm", "585 nm", "645 nm", "705 nm", "900 nm", "940 nm", 
-                   "610 nm", "680 nm", "730 nm", "760 nm", "810 nm", "860 nm"];
+                   "610 nm", "680 nm", "730 nm", "760 nm", "810 nm", "860 nm", "Temperature"];
 
-
-    // Ambil semua header dari thead
-    
-    let headers = [];
-
-    headerCells.forEach((th, index) => {
-        if (index > 0 && index < headerCells.length - 1) { // Hindari checkbox & kolom aksi
-            headers.push(th.innerText.trim());
-        }
-    });
 
     csvContent += headers.join(",") + "\n";
 
@@ -226,7 +230,135 @@ document.querySelectorAll('.save-row').forEach(button => {
     });
 });
 
+document.addEventListener("DOMContentLoaded", function (event) {
+    const batchRenameBtn = document.getElementById("batchRenameBtn");
 
+    if (batchRenameBtn) {
+        batchRenameBtn.addEventListener("click", function () {
+            console.log("Batch Rename Button clicked!");
+
+            let selectedRows = Array.from(document.querySelectorAll(".row-check:checked"));
+            console.log("Selected Rows:", selectedRows);
+
+            let selectedIds = selectedRows.map(checkbox => checkbox.dataset.id);
+            console.log("Selected IDs:", selectedIds);
+
+            if (selectedIds.length === 0) {
+                alert("Pilih setidaknya satu item untuk mengganti nama.");
+                return;
+            }
+
+            let newName = prompt("Masukkan nama baru untuk item yang dipilih:");
+            console.log("New Name:", newName);
+
+            if (!newName) {
+                alert("Nama baru tidak boleh kosong.");
+                return;
+            }
+
+            fetch("update-data-name-batch/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": "{{ csrf_token }}"
+                },
+                body: JSON.stringify({
+                    ids: selectedIds,
+                    name: newName
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log("Response dari server:", data);
+                if (data.status === "success") {
+                    selectedRows.forEach(checkbox => {
+                        let row = checkbox.closest("tr");
+                        let nameCell = row.querySelector('[data-field="name"]');
+                        if (nameCell) {
+                            nameCell.innerText = newName;
+                        }
+                    });
+                    alert("Nama berhasil diperbarui.");
+                } else {
+                    alert("Gagal mengganti nama: " + data.message);
+                }
+            })
+            .catch(error => {
+                console.error("Terjadi kesalahan:", error);
+                alert("Terjadi kesalahan saat mengganti nama.");
+            });
+        });
+    } else {
+        console.error("Batch Rename Button tidak ditemukan.");
+    }
+});
+
+
+document.addEventListener("click", function(event) {
+    if (event.target.classList.contains("edit-row")) {
+        let row = event.target.closest("tr");
+        row.querySelectorAll('td[data-field]').forEach(td => {
+            let text = td.innerText;
+            td.innerHTML = `<input type="text" class="border p-1 w-full" value="${text}" data-field="${td.getAttribute('data-field')}">`;
+        });
+
+        row.querySelector('.edit-row').classList.add('hidden');
+        row.querySelector('.save-row').classList.remove('hidden');
+    }
+});
+
+document.addEventListener("DOMContentLoaded", function () {
+    const sortButton = document.getElementById("sortLabels");
+    let sortState = "none"; // "none", "az", "za"
+
+    if (sortButton) {
+        sortButton.addEventListener("click", function () {
+            const tableBody = document.querySelector("#sensorTable tbody");
+            const rows = Array.from(tableBody.querySelectorAll("tr"));
+
+            if (sortState === "none") {
+                // Sort A-Z
+                rows.sort((a, b) => {
+                    const labelA = a.querySelector('[data-field="name"]').innerText.toLowerCase();
+                    const labelB = b.querySelector('[data-field="name"]').innerText.toLowerCase();
+
+                    if (labelA < labelB) return -1;
+                    if (labelA > labelB) return 1;
+                    return 0;
+                });
+                sortState = "az";
+                sortButton.innerHTML = "&#9650;"; // Panah ke atas
+            } else if (sortState === "az") {
+                // Sort Z-A
+                rows.sort((a, b) => {
+                    const labelA = a.querySelector('[data-field="name"]').innerText.toLowerCase();
+                    const labelB = b.querySelector('[data-field="name"]').innerText.toLowerCase();
+
+                    if (labelA < labelB) return 1;
+                    if (labelA > labelB) return -1;
+                    return 0;
+                });
+                sortState = "za";
+                sortButton.innerHTML = "&#9660;"; // Panah ke bawah
+            } else if (sortState === "za") {
+                // No Sort (kembalikan ke urutan awal)
+                rows.sort((a, b) => {
+                    const idA = parseInt(a.getAttribute("data-id"));
+                    const idB = parseInt(b.getAttribute("data-id"));
+                    return idA - idB;
+                });
+                sortState = "none";
+                sortButton.innerHTML = "&#8212;"; // Strip untuk No Sort
+            }
+
+            // Tambahkan kembali baris yang sudah diurutkan ke tabel
+            rows.forEach(row => tableBody.appendChild(row));
+        });
+    }
+});
+
+
+// WebSocket
 if (window.location.protocol === 'http:') {
   var ws = new WebSocket('ws://' + window.location.host + '/ws/sensor/');
 } else {
@@ -234,6 +366,7 @@ if (window.location.protocol === 'http:') {
 }
 socket.onmessage = function(event) {
     const data = JSON.parse(event.data);
+    console.log("Data diterima dari WebSocket:", data);
     updateOrAddRow(data.data);
 };
 
@@ -241,6 +374,68 @@ socket.onerror = function(error) {
     console.error("WebSocket Error:", error);
 };
 
+document.addEventListener('DOMContentLoaded', function () {
+    const exportButton = document.getElementById('exportCSV');
+    console.log("Export CSV Button:", exportButton);
 
+    if (exportButton) {
+        exportButton.addEventListener('click', function () {
+            console.log("Export CSV clicked!");
+        });
+    } else {
+        console.error("Export CSV button not found!");
+    }
+});
+
+function updateOrAddRow(data) {
+    const tableBody = document.querySelector("#sensorTable tbody");
+    let existingRow = tableBody.querySelector(`tr[data-id="${data.id}"]`);
+
+    if (existingRow) {
+        // Perbarui baris yang sudah ada
+        existingRow.querySelectorAll('[data-field]').forEach(cell => {
+            const field = cell.getAttribute('data-field');
+            if (field && data[field] !== undefined) {
+                cell.innerText = data[field];
+            }
+        });
+    } else {
+        // Tambahkan baris baru
+        const newRow = document.createElement("tr");
+        newRow.setAttribute("data-id", data.id);
+        newRow.classList.add("hover:bg-gray-50");
+        newRow.innerHTML = `
+            <td class="p-2 border border-gray-200 text-center">
+                <input type="checkbox" class="row-check w-4 h-4" data-id="${data.id}">
+            </td>
+            <td class="p-2 border border-gray-200 font-medium" data-field="name">${data.name}</td>
+            <td class="p-2 border border-gray-200" data-field="timestamp">${new Date(data.timestamp).toLocaleString()}</td>
+            <td class="p-2 border border-gray-200" data-field="uv_410">${data.uv_410}</td>
+            <td class="p-2 border border-gray-200" data-field="uv_435">${data.uv_435}</td>
+            <td class="p-2 border border-gray-200" data-field="uv_460">${data.uv_460}</td>
+            <td class="p-2 border border-gray-200" data-field="uv_485">${data.uv_485}</td>
+            <td class="p-2 border border-gray-200" data-field="uv_510">${data.uv_510}</td>
+            <td class="p-2 border border-gray-200" data-field="uv_535">${data.uv_535}</td>
+            <td class="p-2 border border-gray-200" data-field="vis_560">${data.vis_560}</td>
+            <td class="p-2 border border-gray-200" data-field="vis_585">${data.vis_585}</td>
+            <td class="p-2 border border-gray-200" data-field="vis_645">${data.vis_645}</td>
+            <td class="p-2 border border-gray-200" data-field="vis_705">${data.vis_705}</td>
+            <td class="p-2 border border-gray-200" data-field="vis_900">${data.vis_900}</td>
+            <td class="p-2 border border-gray-200" data-field="vis_940">${data.vis_940}</td>
+            <td class="p-2 border border-gray-200" data-field="nir_610">${data.nir_610}</td>
+            <td class="p-2 border border-gray-200" data-field="nir_680">${data.nir_680}</td>
+            <td class="p-2 border border-gray-200" data-field="nir_730">${data.nir_730}</td>
+            <td class="p-2 border border-gray-200" data-field="nir_760">${data.nir_760}</td>
+            <td class="p-2 border border-gray-200" data-field="nir_810">${data.nir_810}</td>
+            <td class="p-2 border border-gray-200" data-field="nir_860">${data.nir_860}</td>
+            <td class="p-2 border border-gray-200" data-field="temperature">${data.temperature}</td>
+            <td class="p-3 border border-gray-200">
+                <button class="edit-row bg-yellow-500 text-white px-2 py-1 rounded">Edit</button>
+                <button class="save-row bg-blue-500 text-white px-2 py-1 rounded hidden">Simpan</button>
+            </td>
+        `;
+        tableBody.appendChild(newRow);
+    }
+}
 
 </script>

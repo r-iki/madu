@@ -6,7 +6,7 @@ from asgiref.sync import async_to_sync
 
 class SpectralReading(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
-    name = models.CharField(max_length=255, blank=True, null=True, )
+    name = models.CharField(max_length=255, blank=True, null=True)
     
     # Ultraviolet (AS72653)
     uv_410 = models.FloatField()
@@ -31,6 +31,9 @@ class SpectralReading(models.Model):
     nir_760 = models.FloatField()
     nir_810 = models.FloatField()
     nir_860 = models.FloatField()
+    
+    # Temperature
+    temperature = models.FloatField(default=0.0)  # Add a default value
     
     def __str__(self):
         return f"{self.name} - {self.timestamp}"
@@ -63,6 +66,7 @@ def send_sensor_update(sender, instance, **kwargs):
                 "nir_760": instance.nir_760,
                 "nir_810": instance.nir_810,
                 "nir_860": instance.nir_860,
+                "temperature": instance.temperature,  # Updated field name
             },
         },
     )
