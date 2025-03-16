@@ -16,8 +16,13 @@ def dashboard_view(request):
         'readings': readings,
     }
     return render(request, 'dashboard.html', context)
-from django.http import JsonResponse
-import json
+
+@login_required
+def sensor_setup_view(request):
+    """
+    View untuk merender halaman pengaturan sensor AS7265X.
+    """
+    return render(request, 'partials/dashboard/setup.html')
 
 @csrf_exempt
 def update_sensor_data(request):

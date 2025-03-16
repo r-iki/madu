@@ -1,0 +1,136 @@
+<!-- filepath: d:\College\TA\Code\src\templates\partials\dashboard\nav.html -->
+<nav class="bg-gray-800 border-gray-200 px-4 py-2.5 rounded dark:bg-gray-900">
+    <div class="container flex flex-wrap justify-between items-center mx-auto">
+        <!-- Logo dan Judul -->
+        <a href="{% url 'dashboard' %}" class="flex items-center">
+            <span class="self-center text-xl font-semibold whitespace-nowrap text-white">AS7265X Dashboard</span>
+        </a>
+
+        <!-- Status WiFi dan Bluetooth -->
+        <div class="flex items-center space-x-6">
+            <!-- WiFi Status -->
+            <div class="flex items-center space-x-2">
+                <img id="wifi-icon" src="https://heroicons.com/icons/wifi.svg" alt="WiFi Icon" class="h-6 w-6 text-red-500">
+                <span id="wifi-status-text" class="text-sm text-gray-300">WiFi Disconnected</span>
+            </div>
+
+            <!-- Bluetooth Status -->
+            <div class="flex items-center space-x-2">
+                <img id="bluetooth-icon" src="https://heroicons.com/icons/bluetooth.svg" alt="Bluetooth Icon" class="h-6 w-6 text-red-500">
+                <span id="bluetooth-status-text" class="text-sm text-gray-300">Bluetooth Disconnected</span>
+            </div>
+
+            <!-- Logo Pengaturan -->
+            <a href="{% url 'sensor_setup' %}" class="flex items-center text-gray-300 hover:text-white">
+                <img src="https://heroicons.com/icons/settings.svg" alt="Settings Icon" class="h-6 w-6">
+                <span class="ml-2 text-sm">Settings</span>
+            </a>
+        </div>
+    </div>
+</nav>
+
+<style>
+/* Gaya umum untuk ikon */
+.icon-wifi,
+.icon-bluetooth {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-color: gray;
+    position: relative;
+}
+
+/* WiFi Ikon */
+.icon-wifi::before,
+.icon-wifi::after {
+    content: '';
+    position: absolute;
+    border: 2px solid transparent;
+    border-radius: 50%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.icon-wifi::before {
+    width: 12px;
+    height: 12px;
+    border-color: gray;
+}
+
+.icon-wifi::after {
+    width: 20px;
+    height: 20px;
+    border-color: gray;
+}
+
+/* Bluetooth Ikon */
+.icon-bluetooth::before,
+.icon-bluetooth::after {
+    content: '';
+    position: absolute;
+    background-color: white;
+    width: 2px;
+    height: 12px;
+    top: 4px;
+    left: 50%;
+    transform: translateX(-50%) rotate(45deg);
+}
+
+.icon-bluetooth::after {
+    transform: translateX(-50%) rotate(-45deg);
+}
+
+/* Status Terhubung */
+.connected {
+    background-color: green;
+}
+
+.connected::before,
+.connected::after {
+    border-color: green;
+}
+
+/* Status Tidak Terhubung */
+.disconnected {
+    background-color: red;
+}
+
+.disconnected::before,
+.disconnected::after {
+    border-color: red;
+}
+</style>
+
+<script>
+function updateWiFiStatus(isConnected) {
+    const wifiIcon = document.getElementById('wifi-icon');
+    const wifiStatusText = document.getElementById('wifi-status-text');
+
+    if (isConnected) {
+        wifiIcon.src = 'https://cdn-icons-png.flaticon.com/512/483/483947.png'; // Ikon WiFi Connected
+        wifiStatusText.textContent = 'WiFi Connected';
+    } else {
+        wifiIcon.src = 'https://cdn-icons-png.flaticon.com/512/483/483948.png'; // Ikon WiFi Disconnected
+        wifiStatusText.textContent = 'WiFi Disconnected';
+    }
+}
+
+function updateBluetoothStatus(isConnected) {
+    const bluetoothIcon = document.getElementById('bluetooth-icon');
+    const bluetoothStatusText = document.getElementById('bluetooth-status-text');
+
+    if (isConnected) {
+        bluetoothIcon.src = 'https://cdn-icons-png.flaticon.com/512/732/732223.png'; // Ikon Bluetooth Connected
+        bluetoothStatusText.textContent = 'Bluetooth Connected';
+    } else {
+        bluetoothIcon.src = 'https://cdn-icons-png.flaticon.com/512/732/732200.png'; // Ikon Bluetooth Disconnected
+        bluetoothStatusText.textContent = 'Bluetooth Disconnected';
+    }
+}
+
+// Contoh penggunaan
+updateWiFiStatus(true); // WiFi terhubung
+updateBluetoothStatus(false); // Bluetooth tidak terhubung
+</script>

@@ -26,18 +26,17 @@ urlpatterns = [
     path('accounts/', include('allauth.urls')),
     path('admin/', admin.site.urls),
     path('api/sensor-data/', sensor_data_api, name='sensor-data-api'),
-    path('accounts/', include('accounts.urls')),
+    path('accounts/', include('accounts.urls',)),
     path('update-sensor/', update_sensor_data, name='update_sensor'),
     path('update-data-name-batch/', update_data_name_batch, name='update_data_name_batch'),
     path('get_sensor_data/', get_sensor_data, name='get_sensor_data'),
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
-from dashboard.views import dashboard_view
+from dashboard.views import dashboard_view,sensor_setup_view
 
 urlpatterns += [
     path('', dashboard_view, name='dashboard'),
 ]
-
 
 from django.conf.urls import handler404
 handler404 = 'core.views.custom_404_view'
@@ -45,4 +44,9 @@ handler404 = 'core.views.custom_404_view'
 from . import views
 urlpatterns += [
     path('send-test-email/', views.send_test_email),
+]
+
+
+urlpatterns += [
+    path('sensor-setup/', sensor_setup_view, name='sensor_setup'),
 ]

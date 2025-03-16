@@ -1,3 +1,8 @@
+{% extends "base.html" %}
+{% block title %}Dashboard AS7265X {% endblock %}
+{% load static %}
+
+{% block content %}
 <!-- filepath: d:\College\TA\Code\src\templates\partials\dashboard\setup.html -->
 <div class="container">
     <h1 class="text-2xl font-bold mb-4">Pengaturan Sensor AS7265X</h1>
@@ -83,3 +88,5 @@
         alert(data.status);
     };
 </script>
+
+{% endblock %}

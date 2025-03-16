@@ -1,5 +1,6 @@
 from allauth.account.adapter import DefaultAccountAdapter
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
+from django.contrib.auth.models import User
 from .models import Profile
 
 class MyAccountAdapter(DefaultAccountAdapter):

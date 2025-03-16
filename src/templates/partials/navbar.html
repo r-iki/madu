@@ -8,10 +8,10 @@
   <div class="flex items-center md:order-2 space-x-3 md:space-x-0 rtl:space-x-reverse">
       <button type="button" class="flex text-sm bg-gray-800 rounded-full md:me-0 focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600" id="user-menu-button" aria-expanded="false" data-dropdown-toggle="user-dropdown" data-dropdown-placement="bottom">
         <span class="sr-only">Open user menu</span>
-         {% if request.user.profile %}
-            <img src="{{ request.user.profile.image.url }}" alt="Profile Picture" class="w-8 h-8 rounded-full">
+         {% if request.user.profile.avatar %}
+            <img src="{{ request.user.profile.avatar.url }}" alt="Profile Picture" class="w-8 h-8 rounded-full">
         {% else %}
-            <img src="https://via.placeholder.com/150" alt="Profile Picture" class="w-8 h-8 rounded-full">
+            <img src="https://static.vecteezy.com/system/resources/previews/023/402/465/non_2x/man-avatar-free-vector.jpg" alt="Profile Picture" class="w-8 h-8 rounded-full">
         {% endif %}
       </button>
       <!-- Dropdown menu -->
