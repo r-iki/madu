@@ -1,0 +1,85 @@
+<!-- filepath: d:\College\TA\Code\src\templates\partials\dashboard\setup.html -->
+<div class="container">
+    <h1 class="text-2xl font-bold mb-4">Pengaturan Sensor AS7265X</h1>
+    <div class="flex flex-col space-y-4">
+        <!-- Integration Time -->
+        <div>
+            <label for="integration-time" class="block text-sm font-medium">Integration Time (ms):</label>
+            <input id="integration-time" type="number" class="border rounded px-2 py-1 w-full" placeholder="2.8 - 896">
+            <button id="set-integration-time-btn" class="bg-blue-500 text-white px-4 py-2 rounded mt-2">Set Integration Time</button>
+        </div>
+
+        <!-- Gain -->
+        <div>
+            <label for="gain" class="block text-sm font-medium">Gain:</label>
+            <select id="gain" class="border rounded px-2 py-1 w-full">
+                <option value="1">1×</option>
+                <option value="3.7">3.7×</option>
+                <option value="16">16×</option>
+                <option value="64">64×</option>
+            </select>
+            <button id="set-gain-btn" class="bg-blue-500 text-white px-4 py-2 rounded mt-2">Set Gain</button>
+        </div>
+
+        <!-- Measurement Mode -->
+        <div>
+            <label for="mode" class="block text-sm font-medium">Measurement Mode:</label>
+            <select id="mode" class="border rounded px-2 py-1 w-full">
+                <option value="0">Standby</option>
+                <option value="1">AS72651 Only</option>
+                <option value="2">AS72652 Only</option>
+                <option value="3">AS72653 Only</option>
+                <option value="4">All Sensors</option>
+            </select>
+            <button id="set-mode-btn" class="bg-blue-500 text-white px-4 py-2 rounded mt-2">Set Mode</button>
+        </div>
+
+        <!-- LED Settings -->
+        <div>
+            <label for="led-type" class="block text-sm font-medium">LED Type:</label>
+            <select id="led-type" class="border rounded px-2 py-1 w-full">
+                <option value="indicator">Indicator LED</option>
+                <option value="bulb">Bulb LED</option>
+            </select>
+            <label for="led-state" class="block text-sm font-medium mt-2">State:</label>
+            <select id="led-state" class="border rounded px-2 py-1 w-full">
+                <option value="on">ON</option>
+                <option value="off">OFF</option>
+            </select>
+            <label for="led-brightness" class="block text-sm font-medium mt-2">Brightness (%):</label>
+            <input id="led-brightness" type="number" class="border rounded px-2 py-1 w-full" placeholder="0 - 100">
+            <button id="set-led-btn" class="bg-blue-500 text-white px-4 py-2 rounded mt-2">Set LED</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const ws = new WebSocket('ws://' + window.location.host + '/ws/sensor-control/');
+
+    document.getElementById('set-integration-time-btn').addEventListener('click', () => {
+        const integrationTime = document.getElementById('integration-time').value;
+        ws.send(JSON.stringify({ command: 'set_integration_time', integration_time: integrationTime }));
+    });
+
+    document.getElementById('set-gain-btn').addEventListener('click', () => {
+        const gain = document.getElementById('gain').value;
+        ws.send(JSON.stringify({ command: 'set_gain', gain: gain }));
+    });
+
+    document.getElementById('set-mode-btn').addEventListener('click', () => {
+        const mode = document.getElementById('mode').value;
+        ws.send(JSON.stringify({ command: 'set_mode', mode: mode }));
+    });
+
+    document.getElementById('set-led-btn').addEventListener('click', () => {
+        const ledType = document.getElementById('led-type').value;
+        const state = document.getElementById('led-state').value;
+        const brightness = document.getElementById('led-brightness').value;
+        ws.send(JSON.stringify({ command: 'set_led', led_type: ledType, state: state, brightness: brightness }));
+    });
+
+    ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        alert(data.status);
+    };
+</script>

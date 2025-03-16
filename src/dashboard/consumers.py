@@ -46,6 +46,7 @@ class SensorConsumer(AsyncWebsocketConsumer):
                     "nir_760": spectral_reading.nir_760,
                     "nir_810": spectral_reading.nir_810,
                     "nir_860": spectral_reading.nir_860,
+                    "temperature": spectral_reading.temperature,
                 },
             },
         )
@@ -77,5 +78,42 @@ class SensorConsumer(AsyncWebsocketConsumer):
             nir_760=data.get("nir_760", 0),
             nir_810=data.get("nir_810", 0),
             nir_860=data.get("nir_860", 0),
+            temperature=data.get("temperature", 0),
             timestamp=now(),
         )
+
+
+class SensorControlConsumer(AsyncWebsocketConsumer):
+    async def connect(self):
+        await self.accept()
+        self.room_name = "sensor_control"
+        await self.channel_layer.group_add(self.room_name, self.channel_name)
+
+    async def disconnect(self, close_code):
+        await self.channel_layer.group_discard(self.room_name, self.channel_name)
+
+    async def receive(self, text_data):
+        data = json.loads(text_data)
+        command = data.get("command")
+
+        if command == "set_integration_time":
+            integration_time = data.get("integration_time")
+            # Kirim ke ESP32
+            await self.send(text_data=json.dumps({"status": f"Integration time set to {integration_time} ms"}))
+
+        elif command == "set_gain":
+            gain = data.get("gain")
+            # Kirim ke ESP32
+            await self.send(text_data=json.dumps({"status": f"Gain set to {gain}x"}))
+
+        elif command == "set_mode":
+            mode = data.get("mode")
+            # Kirim ke ESP32
+            await self.send(text_data=json.dumps({"status": f"Measurement mode set to {mode}"}))
+
+        elif command == "set_led":
+            led_type = data.get("led_type")
+            state = data.get("state")
+            brightness = data.get("brightness")
+            # Kirim ke ESP32
+            await self.send(text_data=json.dumps({"status": f"{led_type} LED set to {state} with brightness {brightness}%"}))
