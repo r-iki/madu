@@ -19,7 +19,7 @@ def sensor_data_api(request):
                 # Near Infrared (AS72651)
                 'nir_610', 'nir_680', 'nir_730', 'nir_760', 'nir_810', 'nir_860',
                 # Temperature
-                'temperature'  # Updated field name
+                'temperature'
             ]
             
             if not all(field in data for field in required_fields):
@@ -50,11 +50,12 @@ def sensor_data_api(request):
                 nir_810=data['nir_810'],
                 nir_860=data['nir_860'],
                 # Temperature
-                temperature=data['temperature']  # Updated field name
+                temperature=data['temperature']
             )
             
-            return JsonResponse({'status': 'success', 'id': reading.id})
-            
+            # Sertakan kode dalam respons
+            return JsonResponse({'status': 'success', 'id': reading.id, 'kode': reading.kode})
+        
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
     
@@ -64,7 +65,13 @@ def sensor_data_api(request):
 def get_sensor_data(request):
     if request.method == 'GET':
         try:
-            readings = SpectralReading.objects.all().values()
+            readings = SpectralReading.objects.all().values(
+                'id', 'name', 'kode', 'timestamp',
+                'uv_410', 'uv_435', 'uv_460', 'uv_485', 'uv_510', 'uv_535',
+                'vis_560', 'vis_585', 'vis_645', 'vis_705', 'vis_900', 'vis_940',
+                'nir_610', 'nir_680', 'nir_730', 'nir_760', 'nir_810', 'nir_860',
+                'temperature'
+            )
             return JsonResponse(list(readings), safe=False)
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': str(e)}, status=400)

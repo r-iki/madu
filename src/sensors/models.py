@@ -7,6 +7,7 @@ from asgiref.sync import async_to_sync
 class SpectralReading(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
     name = models.CharField(max_length=255, blank=True, null=True)
+    kode = models.CharField(max_length=10, blank=True, null=True)  # Tambahkan kolom kode
     
     # Ultraviolet (AS72653)
     uv_410 = models.FloatField()
@@ -35,6 +36,12 @@ class SpectralReading(models.Model):
     # Temperature
     temperature = models.FloatField(default=0.0)  # Add a default value
     
+    def save(self, *args, **kwargs):
+        # Generate kode dari name
+        if self.name:
+            self.kode = '-'.join([word[0].upper() for word in self.name.split('-')])
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f"{self.name} - {self.timestamp}"
     
@@ -48,6 +55,7 @@ def send_sensor_update(sender, instance, **kwargs):
             "data": {
                 "timestamp": instance.timestamp.isoformat(),
                 "name": instance.name,
+                "kode": instance.kode,  # Tambahkan kode
                 "uv_410": instance.uv_410,
                 "uv_435": instance.uv_435,
                 "uv_460": instance.uv_460,

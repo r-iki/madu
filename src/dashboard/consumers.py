@@ -27,6 +27,7 @@ class SensorConsumer(AsyncWebsocketConsumer):
                 "data": {
                     "id": spectral_reading.id,
                     "name": spectral_reading.name,
+                    "kode": spectral_reading.kode,  # Tambahkan kode
                     "timestamp": spectral_reading.timestamp.isoformat(),
                     "uv_410": spectral_reading.uv_410,
                     "uv_435": spectral_reading.uv_435,

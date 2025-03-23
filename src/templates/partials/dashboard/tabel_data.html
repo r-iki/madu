@@ -16,12 +16,8 @@
                     <th rowspan="2" class="p-3 border border-gray-200 whitespace-nowrap">
                         <input type="checkbox" id="select-all" class="w-4 h-4">
                     </th>
-                    <th rowspan="2" class="p-3 border border-gray-200 whitespace-nowrap">
-                        LABELS
-                        <button id="sortLabels" class="ml-2 text-gray-500 hover:text-gray-700">
-                            &#9650; <!-- Panah ke atas untuk A-Z -->
-                        </button>
-                    </th>
+                    <th rowspan="2" class="p-3 border border-gray-200 whitespace-nowrap">Kode</th> <!-- Kolom Kode -->
+                    <th rowspan="2" class="p-3 border border-gray-200 whitespace-nowrap">Labels</th>
                     <th rowspan="2" class="p-3 border border-gray-200 whitespace-nowrap">Waktu</th>
                     <th colspan="6" class="p-3 border border-gray-200 text-center whitespace-nowrap">Sensor AS72651</th>
                     <th colspan="6" class="p-3 border border-gray-200 text-center whitespace-nowrap">Sensor AS72652</th>
@@ -36,14 +32,12 @@
                     <th class="p-2 border lowercase border-gray-200 whitespace-nowrap">485 nm</th>
                     <th class="p-2 border lowercase border-gray-200 whitespace-nowrap">510 nm</th>
                     <th class="p-2 border lowercase border-gray-200 whitespace-nowrap">535 nm</th>
-                    
                     <th class="p-2 border lowercase border-gray-200 whitespace-nowrap">560 nm</th>
                     <th class="p-2 border lowercase border-gray-200 whitespace-nowrap">585 nm</th>
                     <th class="p-2 border lowercase border-gray-200 whitespace-nowrap">645 nm</th>
                     <th class="p-2 border lowercase border-gray-200 whitespace-nowrap">705 nm</th>
                     <th class="p-2 border lowercase border-gray-200 whitespace-nowrap">900 nm</th>
                     <th class="p-2 border lowercase border-gray-200 whitespace-nowrap">940 nm</th>
-                    
                     <th class="p-2 border lowercase border-gray-200 whitespace-nowrap">610 nm</th>
                     <th class="p-2 border lowercase border-gray-200 whitespace-nowrap">680 nm</th>
                     <th class="p-2 border lowercase border-gray-200 whitespace-nowrap">730 nm</th>
@@ -58,8 +52,9 @@
         <td class="p-2 border border-gray-200 text-center">
             <input type="checkbox" class="row-check w-4 h-4" data-id="{{ reading.id }}">
         </td>
+        <td class="p-2 border border-gray-200 font-medium" data-field="kode">{{ reading.kode }}</td> <!-- Kolom Kode -->
         <td class="p-2 border border-gray-200 font-medium" data-field="name">{{ reading.name }}</td>
-        <td class="p-2 border border-gray-200" data-field="timestamp">{{ reading.timestamp|date:"Y-m-d\TH:i:s"  }}</td>
+        <td class="p-2 border border-gray-200" data-field="timestamp">{{ reading.timestamp|date:"Y-m-d\TH:i:s" }}</td>
         <td class="p-2 border border-gray-200" data-field="uv_410">{{ reading.uv_410 }}</td>
         <td class="p-2 border border-gray-200" data-field="uv_435">{{ reading.uv_435 }}</td>
         <td class="p-2 border border-gray-200" data-field="uv_460">{{ reading.uv_460 }}</td>
@@ -408,6 +403,7 @@ function updateOrAddRow(data) {
             <td class="p-2 border border-gray-200 text-center">
                 <input type="checkbox" class="row-check w-4 h-4" data-id="${data.id}">
             </td>
+            <td class="p-2 border border-gray-200 font-medium" data-field="kode">${data.kode}</td> <!-- Kolom Kode -->
             <td class="p-2 border border-gray-200 font-medium" data-field="name">${data.name}</td>
             <td class="p-2 border border-gray-200" data-field="timestamp">${new Date(data.timestamp).toLocaleString()}</td>
             <td class="p-2 border border-gray-200" data-field="uv_410">${data.uv_410}</td>
