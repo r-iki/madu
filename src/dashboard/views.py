@@ -43,7 +43,11 @@ def update_sensor_data(request):
             for field, value in data.items():
                 if hasattr(reading, field):  # Pastikan field ada dalam model
                     if field == 'name':  # Pastikan 'name' selalu string
-                        value = str(value) if value else "Unknown"
+                        value = str(value).strip() if value else "Unknown"  # Hapus spasi di awal/akhir
+                        words = value.split()  # Pisahkan nama berdasarkan spasi
+                        print(f"DEBUG: Name = {value}, Words = {words}")  # Debugging
+                        reading.kode = '-'.join([word[0].upper() for word in words if word])  # Ambil huruf pertama dari setiap kata
+                        print(f"DEBUG: Generated Kode = {reading.kode}")  # Debugging
                     elif field == 'timestamp':  # Konversi string ke datetime
                         try:
                             value = datetime.strptime(value, "%Y-%m-%d %H:%M:%S")
@@ -53,7 +57,7 @@ def update_sensor_data(request):
 
             reading.save()
 
-            return JsonResponse({'status': 'success', 'message': 'Data berhasil diperbarui!'})
+            return JsonResponse({'status': 'success', 'message': 'Data berhasil diperbarui!', 'kode': reading.kode})
         except SpectralReading.DoesNotExist:
             return JsonResponse({'status': 'error', 'message': 'Data tidak ditemukan'}, status=404)
         except Exception as e:
@@ -71,8 +75,16 @@ def update_data_name_batch(request):
             if not ids or not new_name:
                 return JsonResponse({'status': 'error', 'message': 'IDs atau nama baru tidak ditemukan'}, status=400)
 
-            # Perbarui nama untuk semua ID yang diberikan
-            updated_count = SpectralReading.objects.filter(id__in=ids).update(name=new_name)
+            # Perbarui nama dan kode untuk semua ID yang diberikan
+            readings = SpectralReading.objects.filter(id__in=ids)
+            updated_count = 0
+
+            for reading in readings:
+                reading.name = new_name
+                words = new_name.split()  # Pisahkan nama berdasarkan spasi
+                reading.kode = '-'.join([word[0].upper() for word in words if word])  # Ambil huruf pertama dari setiap kata
+                reading.save()
+                updated_count += 1
 
             if updated_count == 0:
                 return JsonResponse({'status': 'error', 'message': 'Tidak ada data yang diperbarui'}, status=404)

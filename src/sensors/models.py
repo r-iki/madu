@@ -34,12 +34,17 @@ class SpectralReading(models.Model):
     nir_860 = models.FloatField()
     
     # Temperature
-    temperature = models.FloatField(default=0.0)  # Add a default value
+    temperature = models.FloatField(default=25.0)  # Add a default value
     
     def save(self, *args, **kwargs):
         # Generate kode dari name
         if self.name:
-            self.kode = '-'.join([word[0].upper() for word in self.name.split('-')])
+            # Hapus spasi di awal/akhir dan pisahkan nama berdasarkan spasi
+            words = self.name.strip().split()
+            # Ambil huruf pertama dari setiap kata dan gabungkan dengan tanda hubung
+            self.kode = '-'.join([word[0].upper() for word in words if word])
+        else:
+            self.kode = "U"  # Default kode jika name kosong (U untuk Unknown)
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -74,7 +79,7 @@ def send_sensor_update(sender, instance, **kwargs):
                 "nir_760": instance.nir_760,
                 "nir_810": instance.nir_810,
                 "nir_860": instance.nir_860,
-                "temperature": instance.temperature,  # Updated field name
+                "temperature": instance.temperature,
             },
         },
     )

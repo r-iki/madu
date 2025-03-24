@@ -16,9 +16,24 @@
                     <th rowspan="2" class="p-3 border border-gray-200 whitespace-nowrap">
                         <input type="checkbox" id="select-all" class="w-4 h-4">
                     </th>
-                    <th rowspan="2" class="p-3 border border-gray-200 whitespace-nowrap">Kode</th> <!-- Kolom Kode -->
-                    <th rowspan="2" class="p-3 border border-gray-200 whitespace-nowrap">Labels</th>
-                    <th rowspan="2" class="p-3 border border-gray-200 whitespace-nowrap">Waktu</th>
+                    <th rowspan="2" class="p-3 border border-gray-200 whitespace-nowrap">
+                        Kode
+                        <button id="sortKode" class="ml-2 text-gray-500 hover:text-gray-700">
+                            <span id="sortKodeIcon" class="inline-block">&#8212;</span> <!-- Ikon Sort -->
+                        </button>
+                    </th>
+                    <th rowspan="2" class="p-3 border border-gray-200 whitespace-nowrap">
+                        Labels
+                        <button id="sortLabels" class="ml-2 text-gray-500 hover:text-gray-700">
+                            <span id="sortLabelsIcon" class="inline-block">&#8212;</span> <!-- Ikon Sort -->
+                        </button>
+                    </th>
+                    <th rowspan="2" class="p-3 border border-gray-200 whitespace-nowrap">
+                        Waktu
+                        <button id="sortTime" class="ml-2 text-gray-500 hover:text-gray-700">
+                            <span id="sortTimeIcon" class="inline-block">&#8212;</span> <!-- Ikon Sort -->
+                        </button>
+                    </th>
                     <th colspan="6" class="p-3 border border-gray-200 text-center whitespace-nowrap">Sensor AS72651</th>
                     <th colspan="6" class="p-3 border border-gray-200 text-center whitespace-nowrap">Sensor AS72652</th>
                     <th colspan="6" class="p-3 border border-gray-200 text-center whitespace-nowrap">Sensor AS72653</th>
@@ -32,12 +47,14 @@
                     <th class="p-2 border lowercase border-gray-200 whitespace-nowrap">485 nm</th>
                     <th class="p-2 border lowercase border-gray-200 whitespace-nowrap">510 nm</th>
                     <th class="p-2 border lowercase border-gray-200 whitespace-nowrap">535 nm</th>
+                    
                     <th class="p-2 border lowercase border-gray-200 whitespace-nowrap">560 nm</th>
                     <th class="p-2 border lowercase border-gray-200 whitespace-nowrap">585 nm</th>
                     <th class="p-2 border lowercase border-gray-200 whitespace-nowrap">645 nm</th>
                     <th class="p-2 border lowercase border-gray-200 whitespace-nowrap">705 nm</th>
                     <th class="p-2 border lowercase border-gray-200 whitespace-nowrap">900 nm</th>
                     <th class="p-2 border lowercase border-gray-200 whitespace-nowrap">940 nm</th>
+                    
                     <th class="p-2 border lowercase border-gray-200 whitespace-nowrap">610 nm</th>
                     <th class="p-2 border lowercase border-gray-200 whitespace-nowrap">680 nm</th>
                     <th class="p-2 border lowercase border-gray-200 whitespace-nowrap">730 nm</th>
@@ -148,10 +165,13 @@ document.querySelectorAll('.edit-row').forEach(button => {
     button.addEventListener('click', function () {
         let row = this.closest('tr');
         row.querySelectorAll('td[data-field]').forEach(td => {
-            let text = td.innerText;
-            td.innerHTML = `<input type="text" class="border p-1 w-full" value="${text}" data-field="${td.getAttribute('data-field')}">`;
+            let text = td.innerText.trim(); // Ambil nilai asli dari <td>
+            if (!td.querySelector('input')) { // Cegah duplikasi input
+                td.innerHTML = `<input type="text" class="border p-1 w-full" value="${text}" data-field="${td.getAttribute('data-field')}">`;
+            }
         });
 
+        // Sembunyikan tombol Edit, tampilkan tombol Simpan
         row.querySelector('.edit-row').classList.add('hidden');
         row.querySelector('.save-row').classList.remove('hidden');
     });
@@ -289,67 +309,80 @@ document.addEventListener("DOMContentLoaded", function (event) {
 });
 
 
-document.addEventListener("click", function(event) {
-    if (event.target.classList.contains("edit-row")) {
-        let row = event.target.closest("tr");
-        row.querySelectorAll('td[data-field]').forEach(td => {
-            let text = td.innerText;
-            td.innerHTML = `<input type="text" class="border p-1 w-full" value="${text}" data-field="${td.getAttribute('data-field')}">`;
-        });
-
-        row.querySelector('.edit-row').classList.add('hidden');
-        row.querySelector('.save-row').classList.remove('hidden');
-    }
-});
 
 document.addEventListener("DOMContentLoaded", function () {
-    const sortButton = document.getElementById("sortLabels");
-    let sortState = "none"; // "none", "az", "za"
+    const tableBody = document.querySelector("#sensorTable tbody");
 
-    if (sortButton) {
-        sortButton.addEventListener("click", function () {
-            const tableBody = document.querySelector("#sensorTable tbody");
-            const rows = Array.from(tableBody.querySelectorAll("tr"));
+    // State untuk sorting
+    let sortState = {
+        kode: "none", // "none", "az", "za"
+        labels: "none",
+        time: "none"
+    };
 
-            if (sortState === "none") {
-                // Sort A-Z
-                rows.sort((a, b) => {
-                    const labelA = a.querySelector('[data-field="name"]').innerText.toLowerCase();
-                    const labelB = b.querySelector('[data-field="name"]').innerText.toLowerCase();
-
-                    if (labelA < labelB) return -1;
-                    if (labelA > labelB) return 1;
-                    return 0;
-                });
-                sortState = "az";
-                sortButton.innerHTML = "&#9650;"; // Panah ke atas
-            } else if (sortState === "az") {
-                // Sort Z-A
-                rows.sort((a, b) => {
-                    const labelA = a.querySelector('[data-field="name"]').innerText.toLowerCase();
-                    const labelB = b.querySelector('[data-field="name"]').innerText.toLowerCase();
-
-                    if (labelA < labelB) return 1;
-                    if (labelA > labelB) return -1;
-                    return 0;
-                });
-                sortState = "za";
-                sortButton.innerHTML = "&#9660;"; // Panah ke bawah
-            } else if (sortState === "za") {
-                // No Sort (kembalikan ke urutan awal)
-                rows.sort((a, b) => {
-                    const idA = parseInt(a.getAttribute("data-id"));
-                    const idB = parseInt(b.getAttribute("data-id"));
-                    return idA - idB;
-                });
-                sortState = "none";
-                sortButton.innerHTML = "&#8212;"; // Strip untuk No Sort
-            }
-
-            // Tambahkan kembali baris yang sudah diurutkan ke tabel
-            rows.forEach(row => tableBody.appendChild(row));
-        });
+    // Fungsi untuk mengatur ikon sort
+    function updateSortIcon(stateKey, iconId) {
+        const icon = document.getElementById(iconId);
+        if (sortState[stateKey] === "none") {
+            icon.innerHTML = "&#8212;"; // Non-Sort (default)
+        } else if (sortState[stateKey] === "az") {
+            icon.innerHTML = "&#9650;"; // A-Z (panah ke atas)
+        } else if (sortState[stateKey] === "za") {
+            icon.innerHTML = "&#9660;"; // Z-A (panah ke bawah)
+        }
     }
+
+    // Fungsi untuk sorting
+    function sortTable(column, stateKey, iconId) {
+        const rows = Array.from(tableBody.querySelectorAll("tr"));
+
+        if (sortState[stateKey] === "none") {
+            // Sort A-Z
+            rows.sort((a, b) => {
+                const valA = a.querySelector(`[data-field="${column}"]`).innerText.toLowerCase();
+                const valB = b.querySelector(`[data-field="${column}"]`).innerText.toLowerCase();
+                return valA.localeCompare(valB);
+            });
+            sortState[stateKey] = "az";
+        } else if (sortState[stateKey] === "az") {
+            // Sort Z-A
+            rows.sort((a, b) => {
+                const valA = a.querySelector(`[data-field="${column}"]`).innerText.toLowerCase();
+                const valB = b.querySelector(`[data-field="${column}"]`).innerText.toLowerCase();
+                return valB.localeCompare(valA);
+            });
+            sortState[stateKey] = "za";
+        } else if (sortState[stateKey] === "za") {
+            // No Sort (kembalikan ke urutan awal)
+            rows.sort((a, b) => {
+                const idA = parseInt(a.getAttribute("data-id"));
+                const idB = parseInt(b.getAttribute("data-id"));
+                return idA - idB;
+            });
+            sortState[stateKey] = "none";
+        }
+
+        // Tambahkan kembali baris yang sudah diurutkan ke tabel
+        rows.forEach(row => tableBody.appendChild(row));
+
+        // Perbarui ikon sort
+        updateSortIcon(stateKey, iconId);
+    }
+
+    // Event listener untuk tombol sort Kode
+    document.getElementById("sortKode").addEventListener("click", function () {
+        sortTable("kode", "kode", "sortKodeIcon");
+    });
+
+    // Event listener untuk tombol sort Labels
+    document.getElementById("sortLabels").addEventListener("click", function () {
+        sortTable("name", "labels", "sortLabelsIcon");
+    });
+
+    // Event listener untuk tombol sort Waktu
+    document.getElementById("sortTime").addEventListener("click", function () {
+        sortTable("timestamp", "time", "sortTimeIcon");
+    });
 });
 
 
@@ -433,5 +466,6 @@ function updateOrAddRow(data) {
         tableBody.appendChild(newRow);
     }
 }
+
 
 </script>

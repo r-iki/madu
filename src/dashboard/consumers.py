@@ -3,6 +3,7 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from sensors.models import SpectralReading
 from django.utils.timezone import now
 from asgiref.sync import sync_to_async
+from datetime import datetime
 
 
 class SensorConsumer(AsyncWebsocketConsumer):
@@ -59,6 +60,18 @@ class SensorConsumer(AsyncWebsocketConsumer):
     @sync_to_async
     def save_spectral_reading(self, data):
         """Menyimpan data ke database dalam thread sinkron."""
+        # Gunakan waktu saat ini jika timestamp tidak diberikan
+        timestamp = data.get("timestamp", None)
+        if not timestamp:  # Jika timestamp tidak ada atau None
+            timestamp = now()
+        else:
+            try:
+                # Konversi timestamp dari string ke datetime jika diberikan
+                timestamp = datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S")
+            except ValueError:
+                # Jika format tidak valid, gunakan waktu saat ini
+                timestamp = now()
+
         return SpectralReading.objects.create(
             name=data.get("name", "Unknown"),
             uv_410=data.get("uv_410", 0),
@@ -80,7 +93,7 @@ class SensorConsumer(AsyncWebsocketConsumer):
             nir_810=data.get("nir_810", 0),
             nir_860=data.get("nir_860", 0),
             temperature=data.get("temperature", 0),
-            timestamp=now(),
+            timestamp=timestamp,  # Gunakan timestamp yang sudah diproses
         )
 
 
