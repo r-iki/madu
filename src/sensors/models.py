@@ -3,9 +3,11 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
+from django.utils.timezone import now, localtime
+from pytz import timezone
 
 class SpectralReading(models.Model):
-    timestamp = models.DateTimeField(auto_now_add=True)
+    timestamp = models.DateTimeField(default=now)  # Gunakan waktu saat ini
     name = models.CharField(max_length=255, blank=True, null=True)
     kode = models.CharField(max_length=10, blank=True, null=True)  # Tambahkan kolom kode
     
@@ -45,6 +47,11 @@ class SpectralReading(models.Model):
             self.kode = '-'.join([word[0].upper() for word in words if word])
         else:
             self.kode = "U"  # Default kode jika name kosong (U untuk Unknown)
+        
+        # Pastikan timestamp menggunakan zona waktu Jakarta
+        jakarta_tz = timezone('Asia/Jakarta')
+        self.timestamp = localtime(now(), jakarta_tz)
+        
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -58,7 +65,7 @@ def send_sensor_update(sender, instance, **kwargs):
         {
             "type": "sensor.update",
             "data": {
-                "timestamp": instance.timestamp.isoformat(),
+                "timestamp": instance.timestamp.astimezone(timezone('Asia/Jakarta')).isoformat(),  # Konversi ke zona waktu Jakarta
                 "name": instance.name,
                 "kode": instance.kode,  # Tambahkan kode
                 "uv_410": instance.uv_410,

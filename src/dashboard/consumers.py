@@ -4,6 +4,7 @@ from sensors.models import SpectralReading
 from django.utils.timezone import now
 from asgiref.sync import sync_to_async
 from datetime import datetime
+from pytz import timezone
 
 
 class SensorConsumer(AsyncWebsocketConsumer):
@@ -15,43 +16,65 @@ class SensorConsumer(AsyncWebsocketConsumer):
         await self.channel_layer.group_discard("sensor_group", self.channel_name)
 
     async def receive(self, text_data):
-        data = json.loads(text_data)
+        try:
+            # Parse data yang diterima dari ESP32
+            data = json.loads(text_data)
 
-        # Simpan ke database secara async
-        spectral_reading = await self.save_spectral_reading(data)
+            # Simpan data ke database secara async
+            spectral_reading = await self.save_spectral_reading(data)
 
-        # Broadcast data ke frontend setelah tersimpan
-        await self.channel_layer.group_send(
-            "sensor_group",
-            {
-                "type": "sensor.update",
-                "data": {
-                    "id": spectral_reading.id,
-                    "name": spectral_reading.name,
-                    "kode": spectral_reading.kode,  # Tambahkan kode
-                    "timestamp": spectral_reading.timestamp.isoformat(),
-                    "uv_410": spectral_reading.uv_410,
-                    "uv_435": spectral_reading.uv_435,
-                    "uv_460": spectral_reading.uv_460,
-                    "uv_485": spectral_reading.uv_485,
-                    "uv_510": spectral_reading.uv_510,
-                    "uv_535": spectral_reading.uv_535,
-                    "vis_560": spectral_reading.vis_560,
-                    "vis_585": spectral_reading.vis_585,
-                    "vis_645": spectral_reading.vis_645,
-                    "vis_705": spectral_reading.vis_705,
-                    "vis_900": spectral_reading.vis_900,
-                    "vis_940": spectral_reading.vis_940,
-                    "nir_610": spectral_reading.nir_610,
-                    "nir_680": spectral_reading.nir_680,
-                    "nir_730": spectral_reading.nir_730,
-                    "nir_760": spectral_reading.nir_760,
-                    "nir_810": spectral_reading.nir_810,
-                    "nir_860": spectral_reading.nir_860,
-                    "temperature": spectral_reading.temperature,
+            # Konversi timestamp ke zona waktu Jakarta
+            jakarta_tz = timezone('Asia/Jakarta')
+            timestamp_jakarta = spectral_reading.timestamp.astimezone(jakarta_tz)
+
+            # Broadcast data ke frontend setelah tersimpan
+            await self.channel_layer.group_send(
+                "sensor_group",
+                {
+                    "type": "sensor.update",
+                    "data": {
+                        "id": spectral_reading.id,
+                        "name": spectral_reading.name,
+                        "kode": spectral_reading.kode,  # Tambahkan kode
+                        "timestamp": timestamp_jakarta.isoformat(),  # Gunakan timestamp dalam zona waktu Jakarta
+                        "uv_410": spectral_reading.uv_410,
+                        "uv_435": spectral_reading.uv_435,
+                        "uv_460": spectral_reading.uv_460,
+                        "uv_485": spectral_reading.uv_485,
+                        "uv_510": spectral_reading.uv_510,
+                        "uv_535": spectral_reading.uv_535,
+                        "vis_560": spectral_reading.vis_560,
+                        "vis_585": spectral_reading.vis_585,
+                        "vis_645": spectral_reading.vis_645,
+                        "vis_705": spectral_reading.vis_705,
+                        "vis_900": spectral_reading.vis_900,
+                        "vis_940": spectral_reading.vis_940,
+                        "nir_610": spectral_reading.nir_610,
+                        "nir_680": spectral_reading.nir_680,
+                        "nir_730": spectral_reading.nir_730,
+                        "nir_760": spectral_reading.nir_760,
+                        "nir_810": spectral_reading.nir_810,
+                        "nir_860": spectral_reading.nir_860,
+                        "temperature": spectral_reading.temperature,
+                    },
                 },
-            },
-        )
+            )
+
+            # Kirim respons sukses ke ESP32
+            await self.send(text_data=json.dumps({
+                "status": "success",
+                "message": "Data berhasil diterima dan disimpan.",
+                "id": spectral_reading.id,
+                "name": spectral_reading.name,
+                "timestamp": timestamp_jakarta.isoformat()
+            }))
+
+        except Exception as e:
+            # Kirim respons error ke ESP32 jika terjadi kesalahan
+            await self.send(text_data=json.dumps({
+                "status": "error",
+                "message": str(e)
+            }))
 
     async def sensor_update(self, event):
         """Mengirimkan update ke frontend."""
@@ -60,17 +83,21 @@ class SensorConsumer(AsyncWebsocketConsumer):
     @sync_to_async
     def save_spectral_reading(self, data):
         """Menyimpan data ke database dalam thread sinkron."""
+        from pytz import timezone
+
         # Gunakan waktu saat ini jika timestamp tidak diberikan
+        jakarta_tz = timezone('Asia/Jakarta')
         timestamp = data.get("timestamp", None)
         if not timestamp:  # Jika timestamp tidak ada atau None
-            timestamp = now()
+            timestamp = now().astimezone(jakarta_tz)  # Gunakan waktu saat ini dalam zona waktu Jakarta
         else:
             try:
                 # Konversi timestamp dari string ke datetime jika diberikan
                 timestamp = datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S")
+                timestamp = jakarta_tz.localize(timestamp)  # Pastikan timestamp sesuai dengan zona waktu Jakarta
             except ValueError:
                 # Jika format tidak valid, gunakan waktu saat ini
-                timestamp = now()
+                timestamp = now().astimezone(jakarta_tz)
 
         return SpectralReading.objects.create(
             name=data.get("name", "Unknown"),
