@@ -171,11 +171,15 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # Backend emai
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+# Gunakan zona waktu Jakarta
+TIME_ZONE = 'Asia/Jakarta'
+
+# Pastikan pengaturan ini diaktifkan
+USE_TZ = True  # Gunakan timezone-aware datetime
+
 
 USE_I18N = True
 
-USE_TZ = True
 
 
 # Static files (CSS, JavaScript, Images)
