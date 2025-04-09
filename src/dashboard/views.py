@@ -93,3 +93,19 @@ def update_data_name_batch(request):
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
     return JsonResponse({'status': 'error', 'message': 'Metode tidak diizinkan'}, status=405)
+
+
+@csrf_exempt
+def delete_data_id(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            sensor_id = data.get('id')
+            
+            # Use the correct model (SpectralReading)
+            SpectralReading.objects.filter(id=sensor_id).delete()
+            
+            return JsonResponse({'status': 'success'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)})
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
