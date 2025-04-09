@@ -258,6 +258,9 @@ ACCOUNT_AUTHENTICATION_METHOD = "username_email"  # Bisa login dengan username a
 ACCOUNT_EMAIL_REQUIRED = True  # Email wajib diisi saat registrasi
 ACCOUNT_USERNAME_REQUIRED = True  # Username juga wajib
 
+SOCIAL_AUTH_REDIRECT_IS_HTTPS = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 # ACCOUNT_AUTHENTICATION_METHOD = "email"
 ACCOUNT_ADAPTER = "accounts.adapters.MyAccountAdapter"
 SOCIALACCOUNT_ADAPTER = 'accounts.adapters.MySocialAccountAdapter'
