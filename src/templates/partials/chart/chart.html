@@ -1,27 +1,11 @@
-{% extends "base.html" %}
-{% block title %}Dashboard AS7265X {% endblock %}
-{% load static %}
-
-{% block content %}
-<div class="container-fluid">
-  <!-- Grafik Utama -->
-  <div class="row mt-4">
-    <div class="col-12"> 
-      {% comment %} {% include 'partials/dashboard/nav.html'%} {% endcomment %}
-      {% comment %} {% include 'partials/dashboard/setup.html' %} {% endcomment %}
-      <div class="card">
-        <div id="SpectralRealtime" class="card-header">
+<div class="card">
+        {% comment %} <div id="SpectralRealtime" class="card-header">
           <h1 class="mb-4 text-3xl font-extrabold text-gray-900 dark:text-orange-400 md:text-5xl lg:text-6xl"><span class="text-transparent bg-clip-text bg-gradient-to-r to-emerald-600 from-sky-400">Real Time Data</span> Spectral AS7265X</h1>
-        </div>
+        </div> {% endcomment %}
         <div class="card-body overflow-x-auto">
           <div id="spectralChart"></div>
         </div>
-      </div>
-      {% comment %} {% include 'bluetooth.html'%} {% endcomment %}
-    </div>
-  </div>
 </div>
-
 <!-- Plotly -->
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 <script>
@@ -30,7 +14,7 @@ if (window.location.protocol === 'http:') {
   var ws = new WebSocket('ws://' + window.location.host + '/ws/sensor/');
 } else {
   var ws = new WebSocket('wss://' + window.location.host + '/ws/sensor/');
-}
+} 
 // Array x untuk garis penghubung (seluruh titik, sorted berdasarkan wavelength)
 const xLine = [410, 435, 460, 485, 510, 535, 560, 585, 610, 645, 680, 705, 730, 760, 810, 860, 900, 940];
 
@@ -80,12 +64,99 @@ let nirTrace = {
 let layout = {
   title: 'Real-time Spectral Data',
   xaxis: { title: 'Wavelength (nm)' },
-  yaxis: { title: 'Intensity' },
+  yaxis: { title: 'Intensity (a.u)' },
   showlegend: true
 };
 
 // Plot grafik dengan keempat trace
 Plotly.newPlot('spectralChart', [lineTrace, uvTrace, visTrace, nirTrace], layout);
+
+
+document.querySelectorAll('tr[data-id]').forEach(row => {
+    row.addEventListener('click', function () {
+        // Ambil data dari kolom dengan atribut data-field
+        const data = {};
+        let name = ''; // Variabel untuk menyimpan nama
+        this.querySelectorAll('td[data-field]').forEach(cell => {
+            const field = cell.getAttribute('data-field');
+            let value = cell.innerText.trim();
+            if (field === 'name') {
+                name = value.replace(/_/g, ' '); // Ganti _ dengan spasi
+            }
+            data[field] = parseFloat(value) || value; // Simpan data lainnya
+        });
+
+        console.log("Data dari baris yang dipilih:", data);
+
+        // Susun array y untuk garis penghubung sesuai urutan xLine
+        let newLineY = [
+            data.uv_410,
+            data.uv_435,
+            data.uv_460,
+            data.uv_485,
+            data.uv_510,
+            data.uv_535,
+            data.vis_560,
+            data.vis_585,
+            data.nir_610,
+            data.vis_645,
+            data.nir_680,
+            data.vis_705,
+            data.nir_730,
+            data.nir_760,
+            data.nir_810,
+            data.nir_860,
+            data.vis_900,
+            data.vis_940
+        ];
+        lineTrace.y = newLineY;
+
+        // Update masing-masing marker
+        uvTrace.y = [
+            data.uv_410,
+            data.uv_435,
+            data.uv_460,
+            data.uv_485,
+            data.uv_510,
+            data.uv_535
+        ];
+        visTrace.y = [
+            data.vis_560,
+            data.vis_585,
+            data.vis_645,
+            data.vis_705,
+            data.vis_900,
+            data.vis_940
+        ];
+        nirTrace.y = [
+            data.nir_610,
+            data.nir_680,
+            data.nir_730,
+            data.nir_760,
+            data.nir_810,
+            data.nir_860
+        ];
+
+        // Perbarui data grafik
+        Plotly.update('spectralChart', {
+            y: [lineTrace.y, uvTrace.y, visTrace.y, nirTrace.y]
+        }, {});
+
+        // Perbarui judul grafik dengan nama
+        Plotly.relayout('spectralChart', {
+            'title.text': `Spectral Data - ${name}`
+        });
+
+        // Perbarui skala axis secara otomatis
+        Plotly.relayout('spectralChart', {
+            'xaxis.autorange': true,
+            'yaxis.autorange': true
+        });
+
+        console.log("Memperbarui grafik dengan data:", lineTrace, uvTrace, visTrace, nirTrace);
+    });
+});
+
 
 // Update grafik saat data baru diterima melalui WebSocket
 ws.onmessage = function(e) {
@@ -156,19 +227,14 @@ ws.onmessage = function(e) {
       duration: 500
     }
   });
+
+  // Perbarui skala axis secara otomatis
+  Plotly.relayout('spectralChart', {
+    'xaxis.autorange': true,
+    'yaxis.autorange': true
+  });
+
+  console.log("Memperbarui grafik dengan data:", lineTrace, uvTrace, visTrace, nirTrace);
 };
-
-document.addEventListener('DOMContentLoaded', function () {
-    const exportButton = document.getElementById('exportCSV');
-    console.log("Export CSV Button:", exportButton);
-
-    if (exportButton) {
-        exportButton.addEventListener('click', function () {
-            console.log("Export CSV clicked!");
-        });
-    } else {
-        console.error("Export CSV button not found!");
-    }
-});
 </script>
-{% endblock %}
+<!-- End Plotly -->

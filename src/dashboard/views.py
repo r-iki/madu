@@ -24,6 +24,16 @@ def sensor_setup_view(request):
     """
     return render(request, 'partials/dashboard/setup.html')
 
+@login_required
+def database_view(request):
+    """
+    View untuk merender tabel sensor.
+    """
+    readings = SpectralReading.objects.order_by('-timestamp')  # Ambil 50 data terbaru
+    context = {
+        'readings': readings,
+    }
+    return render(request,'tabelData.html', context)
 @csrf_exempt
 def update_sensor_data(request):
     if request.method == 'POST':

@@ -27,8 +27,9 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/sensor-data/', sensor_data_api, name='sensor-data-api'),
     path('accounts/', include('accounts.urls',)),
+    path('dashboard/', include('dashboard.urls',)),
     path('update-sensor/', update_sensor_data, name='update_sensor'),
-    path('delate-data-id/', delete_data_id, name='delete_data_id'),
+    path('delete-data-id/', delete_data_id, name='delete_data_id'),
     path('update-data-name-batch/', update_data_name_batch, name='update_data_name_batch'),
     path('get_sensor_data/', get_sensor_data, name='get_sensor_data'),
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

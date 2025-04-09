@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Table Data Multispectral {% endblock %}
+{% load static %}
+
+{% block content %}
+      {% include 'partials/dashboard/tabel_data.html'%}
+      {% include 'partials/chart/chart.html'%}
+      {% comment %} {% include 'dashboard.html' %} {% endcomment %}
+{% endblock %}
