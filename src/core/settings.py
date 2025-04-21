@@ -38,7 +38,8 @@ CSRF_TRUSTED_ORIGINS = [
     'https://madu-production-8901.up.railway.app',
     'https://app.madu.software',
     'https://madu.software',
-    'https://media.madu.software',
+    'https://media.madu.software', # <-- Tambahkan koma di sini
+    'http://localhost:8000',
 ]
 
 # Application definition
@@ -60,6 +61,7 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',  # Provider Google
+    'allauth.socialaccount.providers.github',  # Provider Github
     'widget_tweaks', # Widget tweaks untuk form
     'accounts.apps.AccountsConfig',  # Custom app untuk allauth
     # theme
@@ -159,6 +161,14 @@ SOCIALACCOUNT_PROVIDERS = {
             'secret': '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',
             'key': ''
         }
+    },
+    'github': {
+        'APP': {
+            'client_id': 'Iv23lixp8MJgJ9VawoAc',
+            # 'secret': 'fda4c99ac66e138c91d864fa7ee1ad2860a7db10',
+            'secret':'16b852f566e6a90bbafacea88b23471d58681f9d',
+            'key': ''
+        },
     }
 }
 
@@ -244,7 +254,7 @@ MIDDLEWARE += ['whitenoise.middleware.WhiteNoiseMiddleware']
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
-# SITE_ID = 1  # ID situs default untuk allauth
+SITE_ID = 1  # ID situs default untuk allauth
 
 LOGIN_REDIRECT_URL = '/'  # Redirect setelah login berhasil
 LOGOUT_REDIRECT_URL = '/'  # Redirect setelah logout berhasil
@@ -295,3 +305,28 @@ CHANNEL_LAYERS = {
 
 
 
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'WARNING', # Atau level default Anda
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': os.getenv('DJANGO_LOG_LEVEL', 'INFO'), # Atau level default Anda
+            'propagate': False,
+        },
+        'allauth': {  # Tambahkan logger ini
+            'handlers': ['console'],
+            'level': 'DEBUG',  # Set ke DEBUG untuk melihat detail allauth
+            'propagate': True, # Biarkan event diteruskan jika perlu
+        },
+    },
+}

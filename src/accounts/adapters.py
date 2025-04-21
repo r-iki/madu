@@ -20,14 +20,30 @@ class MySocialAccountAdapter(DefaultSocialAccountAdapter):
     def save_user(self, request, sociallogin, form=None):
         user = super().save_user(request, sociallogin, form)
 
-        # Ambil data dari Google
-        extra_data = sociallogin.account.extra_data
-        google_avatar_url = extra_data.get('picture')  # URL gambar profil dari Google
+        try:
+            # Ambil data dari provider sosial (Google atau GitHub)
+            extra_data = sociallogin.account.extra_data
+            provider = sociallogin.account.provider
+            
+            # Log data untuk debugging
+            print(f"Provider: {provider}")
+            print(f"Extra data: {extra_data}")
+            
+            # Ambil avatar URL berdasarkan provider
+            avatar_url = None
+            if provider == 'google':
+                avatar_url = extra_data.get('picture')
+            elif provider == 'github':
+                avatar_url = extra_data.get('avatar_url')
 
-        # Buat atau perbarui profil pengguna
-        profile, created = Profile.objects.get_or_create(user=user)
-        if google_avatar_url:
-            profile.google_avatar_url = google_avatar_url
-            profile.save()
+            # Buat atau perbarui profil pengguna
+            if avatar_url:
+                profile, created = Profile.objects.get_or_create(user=user)
+                profile.google_avatar_url = avatar_url
+                profile.save()
+                
+        except Exception as e:
+            print(f"Error saving social profile: {e}")
+            # Don't prevent user creation if profile saving fails
 
         return user
