@@ -303,6 +303,16 @@ CHANNEL_LAYERS = {
     },
 }
 
+# For production, use Redis backend if available
+if os.environ.get('REDIS_URL'):
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels_redis.core.RedisChannelLayer",
+            "CONFIG": {
+                "hosts": [os.environ.get('REDIS_URL', 'redis://localhost:6379/0')],
+            },
+        },
+    }
 
 
 LOGGING = {

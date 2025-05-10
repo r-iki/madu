@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% block title %}Connect ESP32 Device{% endblock %}
+{% load static %}
+
+{% block content %}
+<div class="container mx-auto p-4">
+    <div class="bg-white shadow-md rounded-lg p-6">
+        <h1 class="text-2xl font-bold mb-4">Hubungkan ESP32: {{ esp32.name }}</h1>
+        
+        <div class="mb-6 p-4 border rounded-lg bg-gray-50">
+            <h2 class="text-lg font-semibold mb-2">Status Koneksi</h2>
+            <div id="connection-status" class="flex items-center">
+                <span id="status-indicator" class="inline-block w-3 h-3 rounded-full bg-red-500 mr-2"></span>
+                <span id="status-text">Tidak Terhubung</span>
+            </div>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div class="p-4 border rounded-lg">
+                <h2 class="text-lg font-semibold mb-2">1. Hubungkan ke ESP32</h2>
+                <p class="text-sm text-gray-600 mb-4">Pastikan ESP32 sudah dinyalakan dan berada di mode serial.</p>
+                <button id="connect-btn" class="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600">
+                    Connect ESP32
+                </button>
+            </div>
+            
+            <div id="wifi-form-container" class="p-4 border rounded-lg opacity-50">
+                <h2 class="text-lg font-semibold mb-2">2. Setup WiFi</h2>
+                <form id="wifi-form">
+                    <div class="mb-4">
+                        <label for="ssid" class="block text-sm font-medium">WiFi SSID:</label>
+                        <input id="ssid" name="ssid" type="text" class="border rounded w-full px-2 py-1" placeholder="Nama WiFi" required disabled>
+                    </div>
+                    <div class="mb-4">
+                        <label for="password" class="block text-sm font-medium">WiFi Password:</label>
+                        <input id="password" name="password" type="password" class="border rounded w-full px-2 py-1" placeholder="Password WiFi" disabled>
+                    </div>
+                    <button type="submit" id="wifi-submit" disabled class="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 opacity-50 cursor-not-allowed">
+                        Connect WiFi
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+        <div class="p-4 border rounded-lg mb-4">
+            <h2 class="text-lg font-semibold mb-2">Informasi Perangkat</h2>
+            <div id="device-info" class="grid grid-cols-2 gap-2 text-sm">
+                <div class="font-medium">ID Perangkat:</div>
+                <div>{{ esp32.device_id|default:"Not Set" }}</div>
+                <div class="font-medium">Alamat IP:</div>
+                <div id="ip-address">-</div>
+                <div class="font-medium">Kekuatan Sinyal:</div>
+                <div id="signal-strength">-</div>
+                <div class="font-medium">Terakhir Terhubung:</div>
+                <div>{{ esp32.last_connected|default:"Never"|date:"j M Y, H:i" }}</div>
+            </div>
+        </div>
+        
+        <div class="flex gap-2">
+            <a href="{% url 'esp32_dashboard' %}" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
+                Kembali ke Dashboard
+            </a>
+            <a href="{% url 'esp32_settings' device_id=esp32.id %}" id="settings-btn" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 opacity-50 cursor-not-allowed">
+                Lanjut ke Pengaturan
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+    const ws = new WebSocket((window.location.protocol === 'https:' ? 'wss://' : 'ws://') + window.location.host + '/ws/sensor-control/');
+    let connected = false;
+    const deviceId = '{{ esp32.id }}';
+    
+    document.getElementById('connect-btn').addEventListener('click', () => {
+        if (!connected) {
+            ws.send(JSON.stringify({ command: 'connect_esp32' }));
+        } else {
+            ws.send(JSON.stringify({ command: 'disconnect_esp32' }));
+        }
+    });
+    
+    document.getElementById('wifi-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        
+        const ssid = document.getElementById('ssid').value;
+        const password = document.getElementById('password').value;
+        
+        if (!ssid) {
+            alert('SSID harus diisi');
+            return;
+        }
+        
+        ws.send(JSON.stringify({ 
+            command: 'set_wifi', 
+            device_id: deviceId,
+            ssid: ssid, 
+            password: password 
+        }));
+    });
+    
+    function updateConnectionUI(isConnected) {
+        const statusIndicator = document.getElementById('status-indicator');
+        const statusText = document.getElementById('status-text');
+        const connectBtn = document.getElementById('connect-btn');
+        const wifiFormContainer = document.getElementById('wifi-form-container');
+        const ssidInput = document.getElementById('ssid');
+        const passwordInput = document.getElementById('password');
+        const wifiSubmitBtn = document.getElementById('wifi-submit');
+        const settingsBtn = document.getElementById('settings-btn');
+        
+        if (isConnected) {
+            connected = true;
+            statusIndicator.classList.remove('bg-red-500');
+            statusIndicator.classList.add('bg-green-500');
+            statusText.textContent = 'Terhubung';
+            connectBtn.textContent = 'Disconnect ESP32';
+            
+            // Enable WiFi form
+            wifiFormContainer.classList.remove('opacity-50');
+            ssidInput.disabled = false;
+            passwordInput.disabled = false;
+            wifiSubmitBtn.disabled = false;
+            wifiSubmitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            
+            // Enable settings button
+            settingsBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        } else {
+            connected = false;
+            statusIndicator.classList.remove('bg-green-500');
+            statusIndicator.classList.add('bg-red-500');
+            statusText.textContent = 'Tidak Terhubung';
+            connectBtn.textContent = 'Connect ESP32';
+            
+            // Disable WiFi form
+            wifiFormContainer.classList.add('opacity-50');
+            ssidInput.disabled = true;
+            passwordInput.disabled = true;
+            wifiSubmitBtn.disabled = true;
+            wifiSubmitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            
+            // Disable settings button
+            settingsBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        }
+    }
+    
+    ws.onopen = () => {
+        console.log('WebSocket connected');
+        ws.send(JSON.stringify({ command: 'get_esp32_status' }));
+    };
+    
+    ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        console.log('Received:', data);
+        
+        if (data.type === 'connection_status') {
+            updateConnectionUI(data.connected);
+            
+            if (data.connected && data.ip) {
+                document.getElementById('ip-address').textContent = data.ip;
+                document.getElementById('signal-strength').textContent = data.signal ? data.signal + ' dBm' : '-';
+            }
+        }
+        
+        if (data.status) {
+            if (data.status.includes('WiFi settings sent')) {
+                alert('Pengaturan WiFi berhasil dikirim ke ESP32');
+            }
+        }
+    };
+    
+    ws.onclose = () => {
+        console.log('WebSocket disconnected');
+        updateConnectionUI(false);
+    };
+</script>
+{% endblock %}

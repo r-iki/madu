@@ -1,0 +1,440 @@
+{% extends "base.html" %}
+{% block title %}ESP32 Bluetooth WiFi Configuration{% endblock %}
+{% load static %}
+
+{% block content %}
+<div class="container mx-auto p-4">
+    <div class="bg-white shadow-md rounded-lg p-6 mb-6">
+        <h1 class="text-2xl font-bold mb-4">Konfigurasi WiFi ESP32 via Bluetooth</h1>
+        
+        <!-- Status Koneksi Bluetooth -->
+        <div class="mb-6 p-4 border rounded-lg bg-gray-50">
+            <h2 class="text-lg font-semibold mb-2">Status Koneksi Bluetooth</h2>
+            <div class="flex items-center">
+                <div id="ble-connection-status" class="flex items-center">
+                    <span id="ble-status-indicator" class="inline-block w-3 h-3 rounded-full bg-red-500 mr-2"></span>
+                    <span id="ble-status-text">Tidak Terhubung</span>
+                </div>
+                <button id="ble-scan-btn" class="ml-4 bg-blue-500 text-white px-4 py-1 rounded hover:bg-blue-600">
+                    Scan Perangkat
+                </button>
+                <button id="ble-connect-btn" class="ml-2 bg-gray-300 text-gray-700 px-4 py-1 rounded hover:bg-gray-400" disabled>
+                    Hubungkan
+                </button>
+            </div>
+        </div>
+        
+        <!-- Daftar Perangkat Bluetooth -->
+        <div id="ble-device-container" class="mb-6 p-4 border rounded-lg bg-gray-50 hidden">
+            <h2 class="text-lg font-semibold mb-2">Perangkat ESP32 Tersedia</h2>
+            <div id="ble-device-list" class="max-h-40 overflow-y-auto">
+                <!-- Daftar perangkat akan dimuat di sini -->
+                <div class="p-3 text-center text-gray-500">Memindai perangkat...</div>
+            </div>
+        </div>
+        
+        <!-- Formulir Konfigurasi WiFi -->
+        <form id="wifi-form" class="mb-6 p-4 border rounded-lg bg-gray-50">
+            <h2 class="text-lg font-semibold mb-2">Pengaturan WiFi</h2>
+            <div class="mb-4">
+                <label for="ssid" class="block text-sm font-medium">SSID:</label>
+                <input id="ssid" name="ssid" type="text" class="border rounded px-2 py-1 w-full" placeholder="Nama WiFi" required>
+            </div>
+            <div class="mb-4">
+                <label for="password" class="block text-sm font-medium">Password:</label>
+                <input id="password" name="password" type="password" class="border rounded px-2 py-1 w-full" placeholder="Password WiFi">
+                <div class="flex items-center mt-1">
+                    <input type="checkbox" id="show-password" class="mr-1">
+                    <label for="show-password" class="text-xs text-gray-600">Tampilkan Password</label>
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <label for="available-networks" class="block text-sm font-medium">Jaringan WiFi Terdeteksi:</label>
+                <select id="available-networks" class="border rounded px-2 py-1 w-full mt-1" disabled>
+                    <option value="">Hubungkan ESP32 untuk memindai jaringan WiFi</option>
+                </select>
+                <button type="button" id="scan-wifi-btn" class="mt-2 bg-indigo-500 text-white px-3 py-1 rounded hover:bg-indigo-600" disabled>
+                    Pindai WiFi
+                </button>
+            </div>
+            
+            <button type="submit" id="send-wifi-config-btn" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600" disabled>
+                Kirim Konfigurasi WiFi
+            </button>
+        </form>
+        
+        <!-- Status WiFi -->
+        <div id="wifi-status" class="p-4 border rounded-lg bg-gray-50 hidden">
+            <h2 class="text-lg font-semibold mb-2">Status Koneksi WiFi</h2>
+            <div class="grid grid-cols-2 gap-2">
+                <div class="font-medium">SSID:</div>
+                <div id="current-ssid">-</div>
+                <div class="font-medium">IP Address:</div>
+                <div id="current-ip">-</div>
+                <div class="font-medium">Signal Strength:</div>
+                <div id="current-signal">-</div>
+                <div class="font-medium">Status:</div>
+                <div id="wifi-connection-status">Menunggu koneksi...</div>
+            </div>
+            <div class="mt-3">
+                <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+                    <div id="progress-bar" class="bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Log Konsol -->
+        <div class="mt-6">
+            <h2 class="text-lg font-semibold mb-2">Log Konsol</h2>
+            <div id="console-log" class="bg-gray-800 text-green-400 p-3 rounded-md h-40 overflow-y-auto font-mono text-sm">
+                <!-- Log pesan akan ditampilkan di sini -->
+                <div>Menunggu koneksi Bluetooth...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Variabel global
+let bluetoothDevice = null;
+let gattServer = null;
+let wifiService = null;
+let wifiSsidCharacteristic = null;
+let wifiPasswordCharacteristic = null;
+let wifiStatusCharacteristic = null;
+let scanWifiCharacteristic = null;
+let availableNetworksCharacteristic = null;
+
+// UUID untuk layanan dan karakteristik Bluetooth
+const WIFI_SERVICE_UUID = '00001234-0000-1000-8000-00805f9b34fb';
+const WIFI_SSID_UUID = '00002345-0000-1000-8000-00805f9b34fb';
+const WIFI_PASSWORD_UUID = '00003456-0000-1000-8000-00805f9b34fb';
+const WIFI_STATUS_UUID = '00004567-0000-1000-8000-00805f9b34fb';
+const SCAN_WIFI_UUID = '00005678-0000-1000-8000-00805f9b34fb';
+const AVAILABLE_NETWORKS_UUID = '00006789-0000-1000-8000-00805f9b34fb';
+
+// DOM Elements
+const bleStatusIndicator = document.getElementById('ble-status-indicator');
+const bleStatusText = document.getElementById('ble-status-text');
+const bleScanBtn = document.getElementById('ble-scan-btn');
+const bleConnectBtn = document.getElementById('ble-connect-btn');
+const bleDeviceContainer = document.getElementById('ble-device-container');
+const bleDeviceList = document.getElementById('ble-device-list');
+const wifiForm = document.getElementById('wifi-form');
+const ssidInput = document.getElementById('ssid');
+const passwordInput = document.getElementById('password');
+const showPasswordCheckbox = document.getElementById('show-password');
+const availableNetworksSelect = document.getElementById('available-networks');
+const scanWifiBtn = document.getElementById('scan-wifi-btn');
+const sendWifiConfigBtn = document.getElementById('send-wifi-config-btn');
+const wifiStatusContainer = document.getElementById('wifi-status');
+const currentSsidElement = document.getElementById('current-ssid');
+const currentIpElement = document.getElementById('current-ip');
+const currentSignalElement = document.getElementById('current-signal');
+const wifiConnectionStatus = document.getElementById('wifi-connection-status');
+const progressBar = document.getElementById('progress-bar');
+const consoleLog = document.getElementById('console-log');
+
+// Fungsi untuk menambahkan pesan ke log konsol
+function logToConsole(message, type = 'info') {
+    const logEntry = document.createElement('div');
+    let currentTime = new Date().toLocaleTimeString();
+    
+    if (type === 'error') {
+        logEntry.className = 'text-red-400';
+        message = `[${currentTime}] ERROR: ${message}`;
+    } else if (type === 'success') {
+        logEntry.className = 'text-green-400';
+        message = `[${currentTime}] SUCCESS: ${message}`;
+    } else {
+        logEntry.className = 'text-blue-400';
+        message = `[${currentTime}] INFO: ${message}`;
+    }
+    
+    logEntry.textContent = message;
+    consoleLog.appendChild(logEntry);
+    consoleLog.scrollTop = consoleLog.scrollHeight;
+}
+
+// Periksa apakah browser mendukung Web Bluetooth API
+if ('bluetooth' in navigator) {
+    logToConsole('Web Bluetooth API tersedia di browser ini');
+    
+    bleScanBtn.addEventListener('click', scanForBluetoothDevices);
+    bleConnectBtn.addEventListener('click', connectToSelectedDevice);
+    wifiForm.addEventListener('submit', sendWifiConfiguration);
+    scanWifiBtn.addEventListener('click', scanWifiNetworks);
+    showPasswordCheckbox.addEventListener('change', togglePasswordVisibility);
+    
+} else {
+    logToConsole('Browser ini tidak mendukung Web Bluetooth API. Gunakan Chrome atau Edge terbaru.', 'error');
+    bleScanBtn.disabled = true;
+}
+
+// Fungsi untuk memindai perangkat Bluetooth
+async function scanForBluetoothDevices() {
+    logToConsole('Memulai pemindaian perangkat Bluetooth...');
+    bleDeviceContainer.classList.remove('hidden');
+    bleDeviceList.innerHTML = '<div class="p-3 text-center text-gray-500">Memindai perangkat...</div>';
+    
+    try {
+        const filters = [
+            { namePrefix: 'ESP32' },
+            { services: [WIFI_SERVICE_UUID] }
+        ];
+        
+        const device = await navigator.bluetooth.requestDevice({
+            filters: filters,
+            optionalServices: [WIFI_SERVICE_UUID]
+        });
+        
+        // Tampilkan perangkat yang ditemukan
+        bleDeviceList.innerHTML = '';
+        const deviceElement = document.createElement('div');
+        deviceElement.className = 'p-3 border-b hover:bg-gray-100 cursor-pointer flex justify-between items-center';
+        deviceElement.innerHTML = `
+            <div>
+                <div class="font-medium">${device.name || 'Unnamed Device'}</div>
+                <div class="text-xs text-gray-500">ID: ${device.id}</div>
+            </div>
+            <button class="bg-blue-500 text-white px-3 py-1 rounded text-xs select-device-btn">Pilih</button>
+        `;
+        bleDeviceList.appendChild(deviceElement);
+        
+        // Simpan referensi ke perangkat
+        bluetoothDevice = device;
+        bleConnectBtn.disabled = false;
+        
+        // Saat perangkat dihapus (disconnected)
+        device.addEventListener('gattserverdisconnected', onDisconnected);
+        
+        logToConsole(`Perangkat ditemukan: ${device.name || 'Unnamed Device'}`);
+        
+        // Aktifkan tombol connect
+        deviceElement.querySelector('.select-device-btn').addEventListener('click', () => {
+            connectToSelectedDevice();
+        });
+        
+    } catch (error) {
+        logToConsole(`Gagal memindai perangkat: ${error}`, 'error');
+        bleDeviceList.innerHTML = '<div class="p-3 text-center text-red-500">Gagal memindai perangkat. Coba lagi.</div>';
+    }
+}
+
+// Fungsi untuk menghubungkan ke perangkat yang dipilih
+async function connectToSelectedDevice() {
+    if (!bluetoothDevice) {
+        logToConsole('Tidak ada perangkat yang dipilih', 'error');
+        return;
+    }
+    
+    try {
+        logToConsole(`Menghubungkan ke ${bluetoothDevice.name || 'Unnamed Device'}...`);
+        
+        // Connect to the GATT Server
+        gattServer = await bluetoothDevice.gatt.connect();
+        logToConsole('Terhubung ke GATT server');
+        
+        // Get the WiFi service
+        wifiService = await gattServer.getPrimaryService(WIFI_SERVICE_UUID);
+        logToConsole('Layanan WiFi ditemukan');
+        
+        // Get all characteristics
+        wifiSsidCharacteristic = await wifiService.getCharacteristic(WIFI_SSID_UUID);
+        wifiPasswordCharacteristic = await wifiService.getCharacteristic(WIFI_PASSWORD_UUID);
+        wifiStatusCharacteristic = await wifiService.getCharacteristic(WIFI_STATUS_UUID);
+        scanWifiCharacteristic = await wifiService.getCharacteristic(SCAN_WIFI_UUID);
+        availableNetworksCharacteristic = await wifiService.getCharacteristic(AVAILABLE_NETWORKS_UUID);
+        
+        logToConsole('Semua karakteristik Bluetooth berhasil diakses', 'success');
+        
+        // Start notifications for WiFi status
+        await wifiStatusCharacteristic.startNotifications();
+        wifiStatusCharacteristic.addEventListener('characteristicvaluechanged', handleWifiStatusChange);
+        
+        // Start notifications for available networks
+        await availableNetworksCharacteristic.startNotifications();
+        availableNetworksCharacteristic.addEventListener('characteristicvaluechanged', handleAvailableNetworksChange);
+        
+        // Update UI for connected state
+        updateUIConnected();
+        
+        // Read current WiFi status
+        readWifiStatus();
+        
+    } catch (error) {
+        logToConsole(`Koneksi gagal: ${error}`, 'error');
+        updateUIDisconnected();
+    }
+}
+
+// Handle WiFi status changes
+function handleWifiStatusChange(event) {
+    const value = new TextDecoder().decode(event.target.value);
+    logToConsole(`Status WiFi: ${value}`);
+    
+    try {
+        const status = JSON.parse(value);
+        
+        // Update the WiFi status UI
+        wifiStatusContainer.classList.remove('hidden');
+        currentSsidElement.textContent = status.ssid || '-';
+        currentIpElement.textContent = status.ip || '-';
+        currentSignalElement.textContent = status.rssi ? `${status.rssi} dBm` : '-';
+        
+        // Update connection status
+        wifiConnectionStatus.textContent = status.connected ? 'Terhubung' : 'Tidak Terhubung';
+        
+        // Update progress bar if connecting
+        if (status.status === 'connecting') {
+            progressBar.style.width = `${status.progress || 0}%`;
+        }
+        
+        // If connected, update the form with the current SSID
+        if (status.connected && status.ssid) {
+            ssidInput.value = status.ssid;
+        }
+    } catch (e) {
+        logToConsole(`Error parsing WiFi status: ${e}`, 'error');
+    }
+}
+
+// Handle available WiFi networks list changes
+function handleAvailableNetworksChange(event) {
+    const value = new TextDecoder().decode(event.target.value);
+    logToConsole(`Networks received: ${value}`);
+    
+    try {
+        const networks = JSON.parse(value);
+        
+        // Clear existing options
+        while (availableNetworksSelect.options.length > 0) {
+            availableNetworksSelect.remove(0);
+        }
+        
+        // Add placeholder
+        const placeholderOption = document.createElement('option');
+        placeholderOption.value = '';
+        placeholderOption.textContent = 'Pilih jaringan WiFi...';
+        availableNetworksSelect.appendChild(placeholderOption);
+        
+        // Add networks
+        networks.forEach(network => {
+            const option = document.createElement('option');
+            option.value = network.ssid;
+            option.textContent = `${network.ssid} (${network.rssi} dBm)`;
+            availableNetworksSelect.appendChild(option);
+        });
+        
+        // Enable the select
+        availableNetworksSelect.disabled = false;
+    } catch (e) {
+        logToConsole(`Error parsing networks: ${e}`, 'error');
+    }
+}
+
+// Read current WiFi status
+async function readWifiStatus() {
+    try {
+        if (wifiStatusCharacteristic) {
+            const value = await wifiStatusCharacteristic.readValue();
+            const status = new TextDecoder().decode(value);
+            logToConsole(`Current WiFi status: ${status}`);
+        }
+    } catch (error) {
+        logToConsole(`Error reading WiFi status: ${error}`, 'error');
+    }
+}
+
+// Scan for WiFi networks
+async function scanWifiNetworks() {
+    try {
+        if (scanWifiCharacteristic) {
+            await scanWifiCharacteristic.writeValue(new TextEncoder().encode('scan'));
+            logToConsole('Memindai jaringan WiFi...');
+            availableNetworksSelect.innerHTML = '<option value="">Memindai jaringan...</option>';
+        }
+    } catch (error) {
+        logToConsole(`Error scanning WiFi networks: ${error}`, 'error');
+    }
+}
+
+// Send WiFi configuration to ESP32
+async function sendWifiConfiguration(e) {
+    e.preventDefault();
+    
+    const ssid = ssidInput.value.trim();
+    const password = passwordInput.value;
+    
+    if (!ssid) {
+        logToConsole('SSID tidak boleh kosong', 'error');
+        return;
+    }
+    
+    try {
+        logToConsole(`Mengirim konfigurasi WiFi untuk SSID: ${ssid}`);
+        
+        // Write SSID
+        await wifiSsidCharacteristic.writeValue(new TextEncoder().encode(ssid));
+        
+        // Write password
+        await wifiPasswordCharacteristic.writeValue(new TextEncoder().encode(password));
+        
+        logToConsole('Konfigurasi WiFi terkirim, menunggu koneksi...', 'success');
+        wifiStatusContainer.classList.remove('hidden');
+        progressBar.style.width = '0%';
+        wifiConnectionStatus.textContent = 'Menghubungkan...';
+        
+    } catch (error) {
+        logToConsole(`Gagal mengirim konfigurasi WiFi: ${error}`, 'error');
+    }
+}
+
+// Toggle password visibility
+function togglePasswordVisibility() {
+    passwordInput.type = showPasswordCheckbox.checked ? 'text' : 'password';
+}
+
+// Handle disconnection
+function onDisconnected() {
+    logToConsole('Perangkat terputus', 'error');
+    updateUIDisconnected();
+}
+
+// Update UI for connected state
+function updateUIConnected() {
+    bleStatusIndicator.classList.remove('bg-red-500');
+    bleStatusIndicator.classList.add('bg-green-500');
+    bleStatusText.textContent = 'Terhubung';
+    bleConnectBtn.textContent = 'Putuskan';
+    bleScanBtn.disabled = false;
+    scanWifiBtn.disabled = false;
+    sendWifiConfigBtn.disabled = false;
+    
+    logToConsole('ESP32 terhubung via Bluetooth', 'success');
+}
+
+// Update UI for disconnected state
+function updateUIDisconnected() {
+    bleStatusIndicator.classList.remove('bg-green-500');
+    bleStatusIndicator.classList.add('bg-red-500');
+    bleStatusText.textContent = 'Tidak Terhubung';
+    bleConnectBtn.textContent = 'Hubungkan';
+    bleConnectBtn.disabled = true;
+    scanWifiBtn.disabled = true;
+    sendWifiConfigBtn.disabled = true;
+    availableNetworksSelect.disabled = true;
+    wifiStatusContainer.classList.add('hidden');
+    
+    // Reset references
+    gattServer = null;
+    wifiService = null;
+    wifiSsidCharacteristic = null;
+    wifiPasswordCharacteristic = null;
+    wifiStatusCharacteristic = null;
+    scanWifiCharacteristic = null;
+    availableNetworksCharacteristic = null;
+}
+</script>
+{% endblock %}

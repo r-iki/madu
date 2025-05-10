@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+{% block title %}ESP32 Serial Monitor{% endblock %}
+{% load static %}
+
+{% block content %}
+<div class="container mx-auto p-4">
+    <div class="bg-white shadow-md rounded-lg p-6 mb-6">
+        <h1 class="text-2xl font-bold mb-4">ESP32 Serial Monitor</h1>
+        
+        <div class="mb-6 flex justify-between items-center">
+            <div class="flex items-center">
+                <div id="connection-status" class="flex items-center">
+                    <span id="status-indicator" class="inline-block w-3 h-3 rounded-full bg-red-500 mr-2"></span>
+                    <span id="status-text">Tidak Terhubung</span>
+                </div>
+                <button id="connect-btn" class="ml-4 bg-blue-500 text-white px-4 py-1 rounded hover:bg-blue-600">
+                    Hubungkan
+                </button>
+            </div>
+            <div>
+                <button id="clear-monitor" class="bg-gray-500 text-white px-4 py-1 rounded hover:bg-gray-600">
+                    Clear Monitor
+                </button>
+            </div>
+        </div>
+        
+        <!-- Serial Monitor -->
+        <div class="mb-6">
+            <div class="bg-gray-900 text-green-400 p-4 rounded-lg h-96 overflow-auto font-mono text-sm" id="serial-monitor">
+                <div class="mb-2">--- Serial Monitor ---</div>
+            </div>
+        </div>
+        
+        <!-- Command Input -->
+        <div class="flex">
+            <input type="text" id="command-input" class="flex-grow mr-2 border rounded px-2 py-1" placeholder="Masukkan perintah untuk ESP32...">
+            <button id="send-command" class="bg-blue-500 text-white px-4 py-1 rounded hover:bg-blue-600">
+                Kirim
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const ws = new WebSocket((window.location.protocol === 'https:' ? 'wss://' : 'ws://') + window.location.host + '/ws/sensor-control/');
+    let connected = false;
+    const serialMonitor = document.getElementById('serial-monitor');
+    const commandInput = document.getElementById('command-input');
+    const sendCommandBtn = document.getElementById('send-command');
+    const connectBtn = document.getElementById('connect-btn');
+    const clearMonitorBtn = document.getElementById('clear-monitor');
+    
+    // Helper function to add message to serial monitor
+    function addToSerialMonitor(message, isInput = false) {
+        const line = document.createElement('div');
+        line.classList.add('mb-1');
+        if (isInput) {
+            line.classList.add('text-blue-300');
+            line.textContent = '> ' + message;
+        } else {
+            line.textContent = message;
+        }
+        serialMonitor.appendChild(line);
+        serialMonitor.scrollTop = serialMonitor.scrollHeight;
+    }
+    
+    // Connection handling
+    connectBtn.addEventListener('click', () => {
+        if (!connected) {
+            addToSerialMonitor('Attempting to connect to ESP32...', true);
+            ws.send(JSON.stringify({ command: 'connect_esp32' }));
+        } else {
+            addToSerialMonitor('Disconnecting from ESP32...', true);
+            ws.send(JSON.stringify({ command: 'disconnect_esp32' }));
+        }
+    });
+    
+    // Send command to ESP32
+    sendCommandBtn.addEventListener('click', () => {
+        const command = commandInput.value.trim();
+        if (command) {
+            addToSerialMonitor(command, true);
+            ws.send(JSON.stringify({ command: 'send_raw_command', raw_command: command }));
+            commandInput.value = ''; // Clear input after sending
+        }
+    });
+    
+    // Allow Enter key to send command
+    commandInput.addEventListener('keyup', (event) => {
+        if (event.key === 'Enter') {
+            sendCommandBtn.click();
+        }
+    });
+    
+    // Clear monitor
+    clearMonitorBtn.addEventListener('click', () => {
+        while (serialMonitor.childElementCount > 1) {
+            serialMonitor.removeChild(serialMonitor.lastChild);
+        }
+    });
+    
+    // WebSocket event handlers
+    ws.onopen = () => {
+        addToSerialMonitor('WebSocket connection established');
+        ws.send(JSON.stringify({ command: 'get_esp32_status' }));
+    };
+    
+    ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        
+        // Handle connection status updates
+        if (data.type === 'connection_status') {
+            const statusIndicator = document.getElementById('status-indicator');
+            const statusText = document.getElementById('status-text');
+            
+            if (data.connected) {
+                connected = true;
+                statusIndicator.classList.remove('bg-red-500');
+                statusIndicator.classList.add('bg-green-500');
+                statusText.textContent = 'Terhubung';
+                connectBtn.textContent = 'Putuskan';
+            } else {
+                connected = false;
+                statusIndicator.classList.remove('bg-green-500');
+                statusIndicator.classList.add('bg-red-500');
+                statusText.textContent = 'Tidak Terhubung';
+                connectBtn.textContent = 'Hubungkan';
+            }
+        }
+        
+        // Handle serial monitor data
+        if (data.type === 'serial_data') {
+            addToSerialMonitor(data.message);
+        }
+        
+        // Handle generic response or status messages
+        if (data.status && !data.type) {
+            addToSerialMonitor(`Response: ${data.status}`);
+        }
+    };
+    
+    ws.onclose = () => {
+        addToSerialMonitor('WebSocket connection closed');
+        document.getElementById('status-indicator').classList.remove('bg-green-500');
+        document.getElementById('status-indicator').classList.add('bg-red-500');
+        document.getElementById('status-text').textContent = 'Tidak Terhubung';
+        connected = false;
+    };
+    
+    ws.onerror = (error) => {
+        addToSerialMonitor('WebSocket error: ' + error.message);
+    };
+</script>
+{% endblock %}

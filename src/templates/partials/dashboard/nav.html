@@ -20,11 +20,42 @@
                 <span id="bluetooth-status-text" class="text-sm text-gray-300">Bluetooth Disconnected</span>
             </div>
 
-            <!-- Logo Pengaturan -->
-            <a href="{% url 'sensor_setup' %}" class="flex items-center text-gray-300 hover:text-white">
-                <img src="https://heroicons.com/icons/settings.svg" alt="Settings Icon" class="h-6 w-6">
-                <span class="ml-2 text-sm">Settings</span>
-            </a>
+            <!-- Dropdown Menu untuk Pengaturan -->
+            <div class="relative group">
+                <button class="flex items-center text-gray-300 hover:text-white">
+                    <img src="https://heroicons.com/icons/settings.svg" alt="Settings Icon" class="h-6 w-6">
+                    <span class="ml-2 text-sm">Settings</span>
+                    <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </button>
+                <div class="absolute hidden group-hover:block right-0 mt-2 w-60 bg-gray-800 border border-gray-700 rounded-md shadow-lg z-10">
+                    <div class="py-1 text-sm text-gray-300">
+                        <a href="{% url 'sensor_setup' %}" class="block px-4 py-2 hover:bg-gray-700">
+                            Sensor Setup
+                        </a>
+                        <a href="{% url 'esp32_control' %}" class="block px-4 py-2 hover:bg-gray-700">
+                            ESP32 Control Panel
+                        </a>
+                        <a href="{% url 'esp32_serial_monitor' %}" class="block px-4 py-2 hover:bg-gray-700">
+                            Serial Monitor
+                        </a>
+                        <a href="{% url 'esp32_wifi_config' %}" class="block px-4 py-2 hover:bg-gray-700">
+                            WiFi Configuration
+                        </a>
+                        <a href="{% url 'esp32_device_config' %}" class="block px-4 py-2 hover:bg-gray-700">
+                            Device Configuration
+                        </a>
+                        <a href="{% url 'esp32_sensor_readings' %}" class="block px-4 py-2 hover:bg-gray-700">
+                            Sensor Readings
+                        </a>
+                        <div class="border-t border-gray-700 my-1"></div>
+                        <a href="{% url 'esp32_dashboard' %}" class="block px-4 py-2 hover:bg-gray-700">
+                            ESP32 Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </nav>
@@ -133,4 +164,30 @@ function updateBluetoothStatus(isConnected) {
 // Contoh penggunaan
 updateWiFiStatus(true); // WiFi terhubung
 updateBluetoothStatus(false); // Bluetooth tidak terhubung
+
+// WebSocket Connection for Real-time Updates
+document.addEventListener('DOMContentLoaded', function() {
+    const ws = new WebSocket((window.location.protocol === 'https:' ? 'wss://' : 'ws://') + window.location.host + '/ws/sensor-control/');
+    
+    ws.onopen = () => {
+        console.log('WebSocket connected');
+        ws.send(JSON.stringify({ command: 'get_esp32_status' }));
+    };
+    
+    ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        console.log('Received:', data);
+        
+        if (data.type === 'connection_status') {
+            updateWiFiStatus(data.wifi_connected);
+            updateBluetoothStatus(data.bluetooth_connected);
+        }
+    };
+    
+    ws.onclose = () => {
+        console.log('WebSocket disconnected');
+        updateWiFiStatus(false);
+        updateBluetoothStatus(false);
+    };
+});
 </script>

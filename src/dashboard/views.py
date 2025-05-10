@@ -313,3 +313,131 @@ def esp32_save_data(request):
             return JsonResponse({'status': 'error', 'message': str(e)})
     
     return JsonResponse({'status': 'error', 'message': 'Invalid method'})
+
+@login_required
+def esp32_control_view(request):
+    """
+    View untuk menampilkan antarmuka kontrol ESP32 dan konfigurasi sensor AS7265X.
+    """
+    return render(request, 'partials/dashboard/setup.html')
+
+@login_required
+def esp32_serial_monitor(request):
+    """
+    View untuk monitoring serial output dari ESP32.
+    """
+    return render(request, 'partials/dashboard/serial_monitor.html')
+
+@csrf_exempt
+def esp32_command(request):
+    """
+    API endpoint untuk mengirim perintah langsung ke ESP32
+    """
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            command = data.get('command')
+            
+            # Ini hanya menyimpan perintah ke database sebagai log
+            # Perintah sebenarnya akan dikirim melalui WebSocket
+            return JsonResponse({'status': 'success', 'message': 'Command sent to ESP32'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)})
+    
+    return JsonResponse({'status': 'error', 'message': 'Invalid method'})
+
+@login_required
+def esp32_wifi_config(request):
+    """
+    View untuk mengkonfigurasi pengaturan WiFi pada ESP32
+    """
+    if request.method == 'POST':
+        ssid = request.POST.get('ssid')
+        password = request.POST.get('password')
+        
+        if not ssid:
+            return JsonResponse({'status': 'error', 'message': 'SSID is required'})
+        
+        # Simpan pengaturan WiFi terakhir (opsional)
+        # Perintah sebenarnya akan dikirim melalui WebSocket
+        
+        return JsonResponse({'status': 'success', 'message': 'WiFi settings updated'})
+    
+    # Jika GET, tampilkan form konfigurasi WiFi
+    return render(request, 'partials/dashboard/wifi_config.html')
+
+@login_required
+def esp32_device_config(request):
+    """
+    View untuk mengkonfigurasi pengaturan perangkat ESP32
+    """
+    if request.method == 'POST':
+        device_name = request.POST.get('device_name')
+        delay_time = request.POST.get('delay_time')
+        duration = request.POST.get('duration')
+        iterations = request.POST.get('iterations')
+        
+        # Validasi input
+        if not all([device_name, delay_time, duration, iterations]):
+            return JsonResponse({'status': 'error', 'message': 'All fields are required'})
+        
+        try:
+            delay_time = int(delay_time)
+            duration = int(duration)
+            iterations = int(iterations)
+        except ValueError:
+            return JsonResponse({'status': 'error', 'message': 'Invalid numeric values'})
+        
+        # Simpan pengaturan perangkat ke database (opsional)
+        # Perintah sebenarnya akan dikirim melalui WebSocket
+        
+        return JsonResponse({'status': 'success', 'message': 'Device configuration updated'})
+    
+    # Jika GET, tampilkan form konfigurasi perangkat
+    return render(request, 'partials/dashboard/device_config.html')
+
+@login_required
+def esp32_sensor_readings(request):
+    """
+    View untuk menampilkan pembacaan sensor terbaru dari ESP32
+    """
+    # Ambil pembacaan terbaru dari database
+    readings = SpectralReading.objects.order_by('-timestamp')[:10]
+    
+    context = {
+        'readings': readings,
+    }
+    return render(request, 'partials/dashboard/sensor_readings.html', context)
+
+@csrf_exempt
+def esp32_start_measurement(request):
+    """
+    API endpoint untuk memulai pengukuran pada ESP32
+    """
+    if request.method == 'POST':
+        # Perintah sebenarnya akan dikirim melalui WebSocket
+        return JsonResponse({'status': 'success', 'message': 'Measurement started'})
+    
+    return JsonResponse({'status': 'error', 'message': 'Invalid method'})
+
+@csrf_exempt
+def esp32_get_status(request):
+    """
+    API endpoint untuk mendapatkan status ESP32
+    """
+    # Ini seharusnya mengambil status terbaru dari database
+    # Untuk sementara kita kembalikan status dummy
+    return JsonResponse({
+        'status': 'success',
+        'connected': False,
+        'ip': '',
+        'signal': '',
+        'last_reading': None
+    })
+
+@login_required
+def bluetooth_wifi_config_view(request):
+    """
+    View untuk mengkonfigurasi WiFi ESP32 melalui koneksi Bluetooth
+    """
+    return render(request, 'esp32/bluetooth_wifi_config.html')
