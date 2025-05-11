@@ -17,13 +17,17 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings')
 django.setup()
 
 # Import setelah django.setup()
-from dashboard.routing import websocket_urlpatterns
+from dashboard.routing import websocket_urlpatterns as dashboard_websocket_urlpatterns
+from ml.routing import websocket_urlpatterns as ml_websocket_urlpatterns
+
+# Gabungkan pola URL WebSocket dari kedua aplikasi
+combined_websocket_urlpatterns = dashboard_websocket_urlpatterns + ml_websocket_urlpatterns
 
 application = ProtocolTypeRouter({
     "http": get_asgi_application(),
     "websocket": AuthMiddlewareStack(
         URLRouter(
-            websocket_urlpatterns
+            combined_websocket_urlpatterns
         )
     ),
 })

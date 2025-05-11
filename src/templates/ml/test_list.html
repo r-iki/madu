@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">ML Test List</h1>
+    
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Test Name</th>
+                            <th>Date</th>
+                            <th>Predictions</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for test in tests %}
+                        <tr>
+                            <td>{{ test.id }}</td>
+                            <td>{{ test.test_name }}</td>
+                            <td>{{ test.created_at|date:"Y-m-d H:i" }}</td>
+                            <td>
+                                {% if test.ann_prediction %}ANN: {{ test.ann_prediction }}{% endif %}
+                                {% if test.rf_prediction %}<br>RF: {{ test.rf_prediction }}{% endif %}
+                                {% if test.svm_prediction %}<br>SVM: {{ test.svm_prediction }}{% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'ml_test_detail' test.id %}" class="btn btn-sm btn-primary">View</a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center">No tests available</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="mt-3">
+                <a href="{% url 'ml_dashboard' %}" class="btn btn-secondary">Back to Dashboard</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

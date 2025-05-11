@@ -1,0 +1,284 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">ML Test Detail</h1>
+    
+    <div class="card mb-4">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="card-title">{{ test.test_name }}</h5>
+                <span class="badge bg-secondary">ID: {{ test.id }}</span>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Test Information</h6>
+                    <table class="table table-sm">
+                        <tbody>
+                            <tr>
+                                <th>Test Date:</th>
+                                <td>{{ test.created_at }}</td>
+                            </tr>
+                            <tr>
+                                <th>Notes:</th>
+                                <td>{{ test.notes|default:"No notes" }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="col-md-6">
+                    <h6>Prediction Results</h6>
+                    <table class="table table-sm">
+                        <tbody>
+                            <tr>
+                                <th>ANN:</th>
+                                <td>{{ test.ann_prediction|default:"N/A" }}</td>
+                            </tr>
+                            <tr>
+                                <th>RF:</th>
+                                <td>{{ test.rf_prediction|default:"N/A" }}</td>
+                            </tr>
+                            <tr>
+                                <th>SVM:</th>
+                                <td>{{ test.svm_prediction|default:"N/A" }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="row mt-4">
+                <div class="col-12">
+                    <h6>Spectral Data</h6>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <h6 class="text-muted">Ultraviolet</h6>
+                            <table class="table table-sm">
+                                <tbody>
+                                    <tr>
+                                        <th>410 nm:</th>
+                                        <td>{{ test.spectral_reading.uv_410|floatformat:2 }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>435 nm:</th>
+                                        <td>{{ test.spectral_reading.uv_435|floatformat:2 }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>460 nm:</th>
+                                        <td>{{ test.spectral_reading.uv_460|floatformat:2 }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>485 nm:</th>
+                                        <td>{{ test.spectral_reading.uv_485|floatformat:2 }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>510 nm:</th>
+                                        <td>{{ test.spectral_reading.uv_510|floatformat:2 }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>535 nm:</th>
+                                        <td>{{ test.spectral_reading.uv_535|floatformat:2 }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <h6 class="text-muted">Visible</h6>
+                            <table class="table table-sm">
+                                <tbody>
+                                    <tr>
+                                        <th>560 nm:</th>
+                                        <td>{{ test.spectral_reading.vis_560|floatformat:2 }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>585 nm:</th>
+                                        <td>{{ test.spectral_reading.vis_585|floatformat:2 }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>645 nm:</th>
+                                        <td>{{ test.spectral_reading.vis_645|floatformat:2 }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>705 nm:</th>
+                                        <td>{{ test.spectral_reading.vis_705|floatformat:2 }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>900 nm:</th>
+                                        <td>{{ test.spectral_reading.vis_900|floatformat:2 }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>940 nm:</th>
+                                        <td>{{ test.spectral_reading.vis_940|floatformat:2 }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <h6 class="text-muted">Near Infrared</h6>
+                            <table class="table table-sm">
+                                <tbody>
+                                    <tr>
+                                        <th>610 nm:</th>
+                                        <td>{{ test.spectral_reading.nir_610|floatformat:2 }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>680 nm:</th>
+                                        <td>{{ test.spectral_reading.nir_680|floatformat:2 }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>730 nm:</th>
+                                        <td>{{ test.spectral_reading.nir_730|floatformat:2 }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>760 nm:</th>
+                                        <td>{{ test.spectral_reading.nir_760|floatformat:2 }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>810 nm:</th>
+                                        <td>{{ test.spectral_reading.nir_810|floatformat:2 }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>860 nm:</th>
+                                        <td>{{ test.spectral_reading.nir_860|floatformat:2 }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-3">
+                        <div class="col-md-4">
+                            <h6 class="text-muted">Additional Data</h6>
+                            <table class="table table-sm">
+                                <tbody>
+                                    <tr>
+                                        <th>Temperature:</th>
+                                        <td>{{ test.spectral_reading.temperature|floatformat:1 }} °C</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Sample Name:</th>
+                                        <td>{{ test.spectral_reading.name|default:"Not specified" }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Sample Code:</th>
+                                        <td>{{ test.spectral_reading.kode|default:"Not specified" }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <h5 class="mt-4">Confidence Scores</h5>
+            
+            <div class="row mt-3">
+                {% if test.ann_confidence %}
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h6 class="card-title mb-0">ANN Model</h6>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-group">
+                                {% for class_name, confidence in test.ann_confidence.items %}
+                                <li class="list-group-item">
+                                    <div class="d-flex justify-content-between">
+                                        <span>{{ class_name }}</span>
+                                        <span>{{ confidence|floatformat:4 }}</span>
+                                    </div>
+                                    <div class="progress mt-1">
+                                        <div class="progress-bar" role="progressbar" 
+                                             style="width: {{ confidence|floatformat:2|mul:100 }}%;" 
+                                             aria-valuenow="{{ confidence|floatformat:2|mul:100 }}" 
+                                             aria-valuemin="0" 
+                                             aria-valuemax="100">
+                                        </div>
+                                    </div>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if test.rf_confidence %}
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header bg-success text-white">
+                            <h6 class="card-title mb-0">Random Forest Model</h6>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-group">
+                                {% for class_name, confidence in test.rf_confidence.items %}
+                                <li class="list-group-item">
+                                    <div class="d-flex justify-content-between">
+                                        <span>{{ class_name }}</span>
+                                        <span>{{ confidence|floatformat:4 }}</span>
+                                    </div>
+                                    <div class="progress mt-1">
+                                        <div class="progress-bar bg-success" role="progressbar" 
+                                             style="width: {{ confidence|floatformat:2|mul:100 }}%;" 
+                                             aria-valuenow="{{ confidence|floatformat:2|mul:100 }}" 
+                                             aria-valuemin="0" 
+                                             aria-valuemax="100">
+                                        </div>
+                                    </div>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if test.svm_confidence %}
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header bg-info text-white">
+                            <h6 class="card-title mb-0">SVM Model</h6>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-group">
+                                {% for class_name, confidence in test.svm_confidence.items %}
+                                <li class="list-group-item">
+                                    <div class="d-flex justify-content-between">
+                                        <span>{{ class_name }}</span>
+                                        <span>{{ confidence|floatformat:4 }}</span>
+                                    </div>
+                                    <div class="progress mt-1">
+                                        <div class="progress-bar bg-info" role="progressbar" 
+                                             style="width: {{ confidence|floatformat:2|mul:100 }}%;" 
+                                             aria-valuenow="{{ confidence|floatformat:2|mul:100 }}" 
+                                             aria-valuemin="0" 
+                                             aria-valuemax="100">
+                                        </div>
+                                    </div>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card-footer">
+            <div class="btn-group">
+                <a href="{% url 'ml_test_list' %}" class="btn btn-secondary">Back to Test List</a>
+                <a href="{% url 'ml_dashboard' %}" class="btn btn-primary">Dashboard</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

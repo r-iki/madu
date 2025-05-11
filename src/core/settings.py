@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'dashboard', #  aplikasi dashboard
     'sensors', #  API sensors
+    'ml',     # ML integration
     'rest_framework',
     'channels',  # Channels
     # Auth dengan allauth
@@ -284,7 +285,7 @@ EMAIL_HOST_PASSWORD = 'zigp uuiq koxg ehbq'  # App Password dari Gmail
 DEFAULT_FROM_EMAIL = 'rikimchd@gmail.com'
 
 
-ASGI_APPLICATION = 'core.routing.application' # Routing file untuk Channels
+ASGI_APPLICATION = 'core.asgi.application' # Routing file untuk Channels
 
 
 # UI

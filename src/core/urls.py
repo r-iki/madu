@@ -32,6 +32,8 @@ urlpatterns = [
     path('delete-data-id/', delete_data_id, name='delete_data_id'),
     path('update-data-name-batch/', update_data_name_batch, name='update_data_name_batch'),
     path('get_sensor_data/', get_sensor_data, name='get_sensor_data'),
+    # ML app URLs
+    path('ml/', include('ml.urls')),
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 from dashboard.views import dashboard_view,sensor_setup_view

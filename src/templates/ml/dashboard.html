@@ -1,0 +1,700 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }} - ML Dashboard{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex items-center justify-between">
+        <h1 class="text-2xl font-bold text-gray-800">ML Dashboard</h1>
+        <a href="{% url 'ml_diagnostics' %}" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition text-sm">
+            WebSocket Diagnostics
+        </a>
+    </div>
+    
+    <!-- WebSocket Connection Section -->
+    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="bg-gradient-to-r from-blue-500 to-blue-600 py-4 px-6">
+            <h2 class="text-lg font-semibold text-white">Test ML - WebSocket Connection</h2>
+        </div>
+        <div class="p-6">
+            <!-- Connection Status -->
+            <div class="mb-4 flex justify-between items-center">
+                <h3 class="text-sm font-medium text-gray-700">WebSocket Connection Status:</h3>
+                <span id="ws-status" class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                    Disconnected
+                </span>
+            </div>
+            
+            <!-- Connection Buttons -->
+            <div class="mb-6 flex space-x-3">
+                <button id="connect-ws" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition">
+                    Connect WebSocket
+                </button>
+                <button id="disconnect-ws" disabled class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 transition opacity-50 cursor-not-allowed">
+                    Disconnect
+                </button>
+            </div>
+            
+            <!-- Test Name Input -->
+            <div class="mb-4">
+                <label for="test-name" class="block text-sm font-medium text-gray-700 mb-1">Test Name:</label>
+                <input type="text" id="test-name" value="Test ML" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            
+            <!-- Info Alert -->
+            <div class="mb-6 bg-blue-50 border-l-4 border-blue-400 p-4">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9a1 1 0 00-1-1z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm text-blue-700">
+                            Connect to an ESP32 device with AS7265X sensors to receive spectral data, or manually input test data below.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Test Data Textarea -->
+            <div class="mb-4">
+                <label for="test-data" class="block text-sm font-medium text-gray-700 mb-1">Test Data (JSON):</label>
+                <textarea id="test-data" rows="10" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 font-mono text-sm" placeholder='{"uv_410": 123.45, "uv_435": 234.56, ...}'></textarea>
+                <p class="mt-1 text-xs text-gray-500">Enter spectral data in JSON format with all required fields.</p>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="flex space-x-3">
+                <button id="send-test" disabled class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 transition opacity-50 cursor-not-allowed">
+                    Send Test Data
+                </button>
+                <button id="clear-results" class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 transition">
+                    Clear Results
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ML Prediction Results -->
+    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="bg-gradient-to-r from-purple-500 to-purple-600 py-4 px-6">
+            <h2 class="text-lg font-semibold text-white">ML Prediction Results</h2>
+        </div>
+        <div class="p-6">
+            <div id="results-container">
+                <div class="bg-gray-100 border border-gray-200 rounded-md p-4 text-gray-700">
+                    No results yet. Send test data to see predictions.
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Dashboard Data Section -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Recent Tests -->
+        <div class="bg-white rounded-lg shadow-md overflow-hidden">
+            <div class="bg-gradient-to-r from-green-500 to-green-600 py-4 px-6">
+                <h2 class="text-lg font-semibold text-white">Recent Tests</h2>
+            </div>
+            <div class="p-6">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Test Name</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Predictions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for test in recent_tests %}
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ test.id }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ test.test_name }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ test.created_at|date:"Y-m-d H:i" }}</td>
+                                <td class="px-6 py-4 text-sm text-gray-500">
+                                    {% if test.ann_prediction %}
+                                    <div class="mb-1"><span class="font-medium text-blue-600">ANN:</span> {{ test.ann_prediction }}</div>
+                                    {% endif %}
+                                    {% if test.rf_prediction %}
+                                    <div class="mb-1"><span class="font-medium text-green-600">RF:</span> {{ test.rf_prediction }}</div>
+                                    {% endif %}
+                                    {% if test.svm_prediction %}
+                                    <div><span class="font-medium text-purple-600">SVM:</span> {{ test.svm_prediction }}</div>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="px-6 py-4 text-center text-sm text-gray-500">No tests available</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mt-4">
+                    <a href="{% url 'ml_test_list' %}" class="inline-flex items-center px-4 py-2 border border-blue-600 text-sm font-medium rounded-md text-blue-600 bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        View All Tests
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ML Models -->
+        <div class="bg-white rounded-lg shadow-md overflow-hidden">
+            <div class="bg-gradient-to-r from-indigo-500 to-indigo-600 py-4 px-6">
+                <h2 class="text-lg font-semibold text-white">ML Models</h2>
+            </div>
+            <div class="p-6">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Accuracy</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for model in ml_models %}
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ model.name }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ model.get_model_type_display }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ model.accuracy|floatformat:2 }}%</td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    {% if model.is_active %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        Active
+                                    </span>
+                                    {% else %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                        Inactive
+                                    </span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="px-6 py-4 text-center text-sm text-gray-500">No models available</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mt-4">
+                    <a href="{% url 'ml_model_list' %}" class="inline-flex items-center px-4 py-2 border border-indigo-600 text-sm font-medium rounded-md text-indigo-600 bg-white hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        View All Models
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Debug mode - set to true untuk melihat log debugging
+    const DEBUG = true;
+    
+    // Pencatatan informasi sistem untuk debugging
+    console.debug('============ ML Dashboard Debug Info ============');
+    console.debug('Page loaded at:', new Date().toISOString());
+    console.debug('Browser:', navigator.userAgent);
+    console.debug('Protocol:', window.location.protocol);
+    console.debug('Host:', window.location.host);
+    console.debug('WebSocket API available:', 'WebSocket' in window);
+    console.debug('==============================================');
+      // WebSocket connection
+    let socket = null;
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${wsProtocol}//${window.location.host}/ws/ml/`;
+    
+    // Debug WebSocket path (uncomment either option to test)
+    // const wsUrl = 'ws://127.0.0.1:8000/ws/ml/';
+    // const wsUrl = 'ws://localhost:8000/ws/ml/';
+    console.debug('WebSocket URL:', wsUrl);
+    
+    // Tambahkan WebSocket Debug Panel
+    const debugPanel = document.createElement('div');
+    debugPanel.className = 'bg-gray-800 text-white p-4 rounded-lg mb-6';
+    debugPanel.innerHTML = `
+        <h3 class="text-lg font-medium mb-2">WebSocket Debug Panel</h3>
+        <div class="mb-3">
+            <div class="flex items-center mb-2">
+                <span class="font-medium mr-2">WebSocket URL:</span>
+                <span id="debug-ws-url" class="text-green-400 font-mono">${wsUrl}</span>
+            </div>
+            <div class="flex items-center mb-2">
+                <span class="font-medium mr-2">Protocol:</span>
+                <span id="debug-ws-protocol" class="text-green-400 font-mono">${wsProtocol}</span>
+            </div>
+            <div class="flex items-center mb-2">
+                <span class="font-medium mr-2">Host:</span>
+                <span id="debug-ws-host" class="text-green-400 font-mono">${window.location.host}</span>
+            </div>
+            <div class="flex items-center">
+                <span class="font-medium mr-2">Status:</span>
+                <span id="debug-ws-status" class="text-yellow-400">Disconnected</span>
+            </div>
+        </div>
+        <div class="flex space-x-2">
+            <button id="debug-test-connection" class="px-3 py-1 bg-blue-500 hover:bg-blue-600 rounded text-sm">
+                Test WebSocket Connection
+            </button>
+            <button id="debug-check-server" class="px-3 py-1 bg-purple-500 hover:bg-purple-600 rounded text-sm">
+                Check Server Status
+            </button>
+        </div>
+        <div id="debug-output" class="mt-3 bg-black bg-opacity-50 p-2 rounded h-32 overflow-auto text-xs font-mono"></div>
+    `;
+    
+    // Insert debug panel after the first card
+    document.querySelector('.bg-white.rounded-lg.shadow-md.overflow-hidden').after(debugPanel);
+    
+    // Set up debug functions
+    const debugOutput = document.getElementById('debug-output');
+    const debugWsStatus = document.getElementById('debug-ws-status');
+    
+    function debugLog(...args) {
+        if (DEBUG) {
+            console.log('[WebSocket Debug]', ...args);
+            
+            // Add to debug panel
+            const message = args.map(arg => {
+                if (typeof arg === 'object') {
+                    try {
+                        return JSON.stringify(arg);
+                    } catch (e) {
+                        return String(arg);
+                    }
+                }
+                return String(arg);
+            }).join(' ');
+            
+            const logEntry = document.createElement('div');
+            logEntry.className = 'mb-1';
+            logEntry.innerHTML = `<span class="text-gray-400">[${new Date().toLocaleTimeString()}]</span> ${message}`;
+            debugOutput.prepend(logEntry);
+        }
+    }
+    
+    // Test WebSocket Connection Button
+    document.getElementById('debug-test-connection').addEventListener('click', () => {
+        debugLog('Testing WebSocket connection...');
+        
+        try {
+            const testSocket = new WebSocket(wsUrl);
+            
+            testSocket.onopen = () => {
+                debugLog('✅ Test socket connected successfully!');
+                debugWsStatus.textContent = 'Connected';
+                debugWsStatus.className = 'text-green-400';
+                
+                // Send a test message
+                testSocket.send(JSON.stringify({
+                    test_name: 'Debug Test',
+                    message: 'Debug connection test'
+                }));
+                
+                debugLog('Sent test message, waiting for response...');
+                
+                // Close test socket after 3 seconds
+                setTimeout(() => {
+                    debugLog('Closing test socket...');
+                    testSocket.close();
+                }, 3000);
+            };
+            
+            testSocket.onmessage = (event) => {
+                debugLog('✅ Received response:', event.data);
+                try {
+                    const data = JSON.parse(event.data);
+                    debugLog('Response data type:', data.type);
+                } catch (e) {
+                    debugLog('Could not parse response as JSON');
+                }
+            };
+            
+            testSocket.onclose = (event) => {
+                debugLog(`Test socket closed (code: ${event.code})`);
+                debugWsStatus.textContent = 'Disconnected';
+                debugWsStatus.className = 'text-yellow-400';
+            };
+            
+            testSocket.onerror = (error) => {
+                debugLog('❌ Test socket error:', error);
+                debugWsStatus.textContent = 'Error';
+                debugWsStatus.className = 'text-red-400';
+            };
+        } catch (error) {
+            debugLog('❌ Test connection error:', error.message);
+            debugWsStatus.textContent = 'Error';
+            debugWsStatus.className = 'text-red-400';
+        }
+    });
+    
+    // Check Server Status
+    document.getElementById('debug-check-server').addEventListener('click', async () => {
+        debugLog('Checking server status...');
+        
+        try {
+            // Make a simple HTTP request to test server responsiveness
+            const response = await fetch('/');
+            if (response.ok) {
+                debugLog('✅ HTTP server is responding');
+            } else {
+                debugLog('❌ HTTP server returned status:', response.status);
+            }
+        } catch (error) {
+            debugLog('❌ Server check failed:', error.message);
+        }
+    });
+    
+    // Log WebSocket URL yang digunakan
+    debugLog('WebSocket URL:', wsUrl);
+    
+    // DOM elements
+    const wsStatus = document.getElementById('ws-status');
+    const connectBtn = document.getElementById('connect-ws');
+    const disconnectBtn = document.getElementById('disconnect-ws');
+    const sendTestBtn = document.getElementById('send-test');
+    const clearResultsBtn = document.getElementById('clear-results');
+    const testNameInput = document.getElementById('test-name');
+    const testDataTextarea = document.getElementById('test-data');
+    const resultsContainer = document.getElementById('results-container');
+    
+    
+
+    // Connect WebSocket
+    connectBtn.addEventListener('click', () => {
+        if (socket && socket.readyState === WebSocket.OPEN) {
+            return; // Already connected
+        }
+        
+        try {
+            socket = new WebSocket(wsUrl);
+            
+            socket.onopen = () => {
+                wsStatus.textContent = 'Connected';
+                wsStatus.className = 'px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800';
+                connectBtn.disabled = true;
+                connectBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                disconnectBtn.disabled = false;
+                disconnectBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                sendTestBtn.disabled = false;
+                sendTestBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                
+                // Add connection message to results
+                addResultMessage('WebSocket connected successfully.', 'success');
+                debugLog('WebSocket connected successfully.');
+            };
+            
+            socket.onclose = () => {
+                wsStatus.textContent = 'Disconnected';
+                wsStatus.className = 'px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800';
+                connectBtn.disabled = false;
+                connectBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                disconnectBtn.disabled = true;
+                disconnectBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                sendTestBtn.disabled = true;
+                sendTestBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                
+                // Add disconnection message to results
+                addResultMessage('WebSocket disconnected.', 'warning');
+                debugLog('WebSocket disconnected.');
+                
+                socket = null;
+            };
+            
+            socket.onerror = (error) => {
+                console.error('WebSocket error:', error);
+                addResultMessage('WebSocket error occurred. Check console for details.', 'error');
+                debugLog('WebSocket error:', error);
+            };
+            
+            socket.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                debugLog('Received WebSocket message:', data);
+                handleWebSocketMessage(data);
+            };
+        } catch (error) {
+            console.error('Error creating WebSocket:', error);
+            addResultMessage(`Error connecting WebSocket: ${error.message}`, 'error');
+            debugLog('Error creating WebSocket:', error);
+        }
+    });
+    
+    // Disconnect WebSocket
+    disconnectBtn.addEventListener('click', () => {
+        if (socket) {
+            socket.close();
+            debugLog('WebSocket disconnect requested.');
+        }
+    });
+    
+    // Send test data
+    sendTestBtn.addEventListener('click', () => {
+        if (!socket || socket.readyState !== WebSocket.OPEN) {
+            addResultMessage('WebSocket not connected. Please connect first.', 'warning');
+            debugLog('Attempted to send test data without WebSocket connection.');
+            return;
+        }
+        
+        try {
+            // Get test name and data
+            const testName = testNameInput.value.trim() || 'Test ML';
+            const testDataStr = testDataTextarea.value.trim();
+            
+            if (!testDataStr) {
+                addResultMessage('Please enter test data.', 'warning');
+                debugLog('Test data is empty.');
+                return;
+            }
+            
+            // Parse test data
+            const testData = JSON.parse(testDataStr);
+            
+            // Add test name to data
+            const messageData = {
+                test_name: testName,
+                spectral_data: testData
+            };
+            
+            // Send data to WebSocket
+            socket.send(JSON.stringify(messageData));
+            
+            // Add sending message to results
+            addResultMessage(`Sending test data for "${testName}"...`, 'info');
+            debugLog('Sending test data:', messageData);
+            
+        } catch (error) {
+            console.error('Error sending test data:', error);
+            addResultMessage(`Error sending test data: ${error.message}`, 'error');
+            debugLog('Error sending test data:', error);
+        }
+    });
+    
+    // Clear results
+    clearResultsBtn.addEventListener('click', () => {
+        resultsContainer.innerHTML = '<div class="bg-gray-100 border border-gray-200 rounded-md p-4 text-gray-700">No results yet. Send test data to see predictions.</div>';
+        debugLog('Results cleared.');
+    });
+    
+    // Handle WebSocket messages
+    function handleWebSocketMessage(data) {
+        console.log('Received WebSocket message:', data);
+        
+        if (data.type === 'connection_established') {
+            // Connection confirmation
+            addResultMessage(data.message, 'success');
+        } else if (data.type === 'ml_prediction') {
+            // ML prediction results
+            displayPredictionResults(data);
+        } else if (data.type === 'error') {
+            // Error message
+            addResultMessage(`Error: ${data.message}`, 'error');
+        } else {
+            // Unknown message type
+            addResultMessage(`Received unknown message type: ${data.type}`, 'warning');
+        }
+    }
+    
+    // Display prediction results
+    function displayPredictionResults(data) {
+        const testName = data.test_name;
+        const predictions = data.predictions;
+        const timestamp = data.timestamp;
+        
+        // Create results card
+        const resultsCard = document.createElement('div');
+        resultsCard.className = 'bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden';
+        
+        // Card header with test name and timestamp
+        const cardHeader = document.createElement('div');
+        cardHeader.className = 'bg-gradient-to-r from-blue-500 to-blue-600 py-3 px-4';
+        cardHeader.innerHTML = `
+            <div class="flex justify-between items-center">
+                <h3 class="text-lg font-medium text-white">${testName}</h3>
+                <span class="text-xs text-blue-100">${timestamp || new Date().toLocaleString()}</span>
+            </div>
+        `;
+        resultsCard.appendChild(cardHeader);
+        
+        // Card body with prediction results
+        const cardBody = document.createElement('div');
+        cardBody.className = 'p-4';
+        
+        // Create results table
+        const table = document.createElement('table');
+        table.className = 'min-w-full divide-y divide-gray-200';
+        table.innerHTML = `
+            <thead class="bg-gray-50">
+                <tr>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Model</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Prediction</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Confidence</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200"></tbody>
+        `;
+        
+        const tbody = table.querySelector('tbody');
+        
+        // Model type color mapping
+        const modelColors = {
+            'ANN': 'blue',
+            'RF': 'green',
+            'SVM': 'purple'
+        };
+        
+        // Add rows for each model
+        for (const modelType in predictions) {
+            const modelData = predictions[modelType];
+            const modelColor = modelColors[modelType] || 'gray';
+            
+            const row = document.createElement('tr');
+            row.className = 'hover:bg-gray-50';
+            
+            // Model type cell
+            const modelCell = document.createElement('td');
+            modelCell.className = 'px-6 py-4 whitespace-nowrap text-sm font-medium';
+            modelCell.innerHTML = `<span class="text-${modelColor}-600">${modelType}</span>`;
+            row.appendChild(modelCell);
+            
+            // Prediction cell
+            const predictionCell = document.createElement('td');
+            predictionCell.className = 'px-6 py-4 whitespace-nowrap text-sm';
+            if (modelData.error) {
+                predictionCell.innerHTML = `<span class="text-red-600">${modelData.error}</span>`;
+            } else {
+                predictionCell.textContent = modelData.prediction || 'No prediction';
+                predictionCell.className += ' font-medium text-gray-900';
+            }
+            row.appendChild(predictionCell);
+            
+            // Confidence cell
+            const confidenceCell = document.createElement('td');
+            confidenceCell.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-500';
+            
+            if (modelData.confidence) {
+                const confidenceContainer = document.createElement('div');
+                confidenceContainer.className = 'space-y-2 max-w-md';
+                
+                // Sort confidences in descending order
+                const sortedConfidences = Object.entries(modelData.confidence)
+                    .sort(([, a], [, b]) => b - a);
+                
+                for (const [className, confidence] of sortedConfidences) {
+                    const confidenceItem = document.createElement('div');
+                    confidenceItem.className = 'space-y-1';
+                    
+                    // Label and percentage
+                    const labelContainer = document.createElement('div');
+                    labelContainer.className = 'flex justify-between text-xs';
+                    labelContainer.innerHTML = `
+                        <span class="font-medium">${className}</span>
+                        <span>${(confidence * 100).toFixed(1)}%</span>
+                    `;
+                    
+                    // Create progress bar for confidence
+                    const percentage = (confidence * 100).toFixed(1);
+                    const progressContainer = document.createElement('div');
+                    progressContainer.className = 'w-full bg-gray-200 rounded-full h-2';
+                    progressContainer.innerHTML = `
+                        <div class="bg-${modelColor}-600 h-2 rounded-full" style="width: ${percentage}%"></div>
+                    `;
+                    
+                    confidenceItem.appendChild(labelContainer);
+                    confidenceItem.appendChild(progressContainer);
+                    confidenceContainer.appendChild(confidenceItem);
+                }
+                
+                confidenceCell.appendChild(confidenceContainer);
+            } else {
+                confidenceCell.textContent = 'N/A';
+            }
+            row.appendChild(confidenceCell);
+            
+            tbody.appendChild(row);
+        }
+        
+        cardBody.appendChild(table);
+        resultsCard.appendChild(cardBody);
+        
+        // Add card to results container
+        resultsContainer.innerHTML = '';
+        resultsContainer.appendChild(resultsCard);
+        
+        // Scroll to results
+        resultsCard.scrollIntoView({ behavior: 'smooth' });
+    }
+    
+    // Add message to results
+    function addResultMessage(message, type = 'info') {
+        // Map type to Tailwind CSS classes
+        const typeClasses = {
+            'success': 'bg-green-50 border-green-400 text-green-700',
+            'info': 'bg-blue-50 border-blue-400 text-blue-700',
+            'warning': 'bg-yellow-50 border-yellow-400 text-yellow-700',
+            'error': 'bg-red-50 border-red-400 text-red-700'
+        };
+        
+        const messageElement = document.createElement('div');
+        messageElement.className = `border-l-4 p-4 mb-4 rounded-r-md ${typeClasses[type] || typeClasses.info}`;
+        
+        const messageContent = document.createElement('div');
+        messageContent.className = 'flex';
+        
+        // Icon based on type
+        const iconContainer = document.createElement('div');
+        iconContainer.className = 'flex-shrink-0 mr-3';
+        
+        // Select icon based on message type
+        let iconSvg = '';
+        if (type === 'success') {
+            iconSvg = '<svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>';
+        } else if (type === 'warning') {
+            iconSvg = '<svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>';
+        } else if (type === 'error') {
+            iconSvg = '<svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path></svg>';
+        } else {
+            iconSvg = '<svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>';
+        }
+        
+        iconContainer.innerHTML = iconSvg;
+        
+        const textContainer = document.createElement('div');
+        textContainer.className = 'flex-1';
+        textContainer.textContent = message;
+        
+        // Add timestamp
+        const timestamp = document.createElement('div');
+        timestamp.className = 'text-xs text-gray-500 mt-1';
+        timestamp.textContent = new Date().toLocaleTimeString();
+        textContainer.appendChild(timestamp);
+        
+        messageContent.appendChild(iconContainer);
+        messageContent.appendChild(textContainer);
+        messageElement.appendChild(messageContent);
+        
+        // Add to results container
+        if (resultsContainer.innerHTML.includes('No results yet')) {
+            resultsContainer.innerHTML = '';
+        }
+        resultsContainer.insertBefore(messageElement, resultsContainer.firstChild);
+    }
+    
+    // Auto-connect on page load if requested
+    const autoConnect = new URLSearchParams(window.location.search).get('connect');
+    if (autoConnect === 'true') {
+        setTimeout(() => {
+            connectBtn.click();
+        }, 500);
+    }
+</script>
+{% endblock %}
