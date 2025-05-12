@@ -28,13 +28,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy requirements files
 COPY requirements.txt ml-requirements.txt ./
 
-# Install Python dependencies in a single layer to reduce image size
+# Install Python dependencies step-by-step for better error visibility
 RUN pip install --upgrade pip && \
-    pip install wheel && \
-    pip install setuptools && \
-    pip install joblib==1.3.2 scikit-learn==1.2.2 && \
-    pip install --no-cache-dir -r requirements.txt && \
-    pip install --no-cache-dir -r ml-requirements.txt
+    pip install wheel setuptools
+
+# Install base packages first
+RUN pip install --no-cache-dir joblib==1.3.2
+RUN pip install --no-cache-dir scikit-learn==1.2.2
+
+# Install requirements one file at a time with verbose output for better debugging
+RUN pip install --no-cache-dir --verbose -r ml-requirements.txt
+RUN pip install --no-cache-dir --verbose -r requirements.txt || (echo "ERROR in requirements.txt" && cat requirements.txt && exit 1)
 
 # Create directory structure with src intact
 WORKDIR /app
@@ -54,4 +58,4 @@ EXPOSE 8000
 
 # Change to src directory and run daphne
 WORKDIR /app/src
-CMD ["python", "-m", "daphne", "core.asgi:application", "--bind", "0.0.0.0", "--port", "8000"]
+CMD ["sh", "-c", "daphne core.asgi:application --bind 0.0.0.0 --port ${PORT:-8000}"]
