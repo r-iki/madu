@@ -1,4 +1,13 @@
+# Core ML Dependencies
 joblib==1.3.2
 scikit-learn==1.2.2
 numpy==2.2.1
 pandas==2.2.3
+
+# Visualization and Analysis
+plotly==6.0.0
+ucimlrepo==0.0.7
+
+# Cloud Storage for ML Models
+boto3==1.36.16
+botocore==1.36.16

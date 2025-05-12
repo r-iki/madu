@@ -29,6 +29,45 @@ The `ModelStorageManager` class handles loading and saving ML models from cloud 
 - Can optionally save a local copy for caching purposes when not in cloud-only mode
 - Falls back to local filesystem only when cloud storage fails and cloud-only mode is disabled
 
+## Project Dependencies
+
+The project uses Python 3.12 (as specified in `.python-version`) and depends on several packages organized into categories:
+
+### Main Requirements File
+
+The `requirements.txt` file contains all dependencies organized by functionality:
+
+- Django web framework and extensions
+- Asynchronous and WebSocket support
+- Web server and middleware components
+- Database adapters for PostgreSQL
+- Authentication and security
+- Configuration and environment management
+- HTTP and API tools
+- Cloud storage via boto3 and Cloudflare R2
+- Machine learning dependencies (basic ones are included here and in ml-requirements.txt)
+
+### ML-Specific Requirements
+
+ML-specific dependencies are in `ml-requirements.txt` for better organization:
+
+- Core ML packages (scikit-learn, numpy, pandas, joblib)
+- Data visualization tools
+- Cloud storage for ML models
+
+### Development Setup
+
+To install all requirements:
+
+```bash
+pip install -r requirements.txt
+pip install -r ml-requirements.txt
+```
+
+For production deployment:
+- The Dockerfile handles installing both requirement files
+- Heroku uses both files via `Procfile`
+
 ## Testing
 
 You can verify cloud-only operation using:

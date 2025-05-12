@@ -32,13 +32,14 @@ COPY requirements.txt ml-requirements.txt ./
 RUN pip install --upgrade pip && \
     pip install wheel setuptools
 
-# Install base packages first
-RUN pip install --no-cache-dir joblib==1.3.2
-RUN pip install --no-cache-dir scikit-learn==1.2.2
-
-# Install requirements one file at a time with verbose output for better debugging
+# Install ML dependencies first to handle core dependencies
 RUN pip install --no-cache-dir --verbose -r ml-requirements.txt
+
+# Install the rest of the requirements
 RUN pip install --no-cache-dir --verbose -r requirements.txt || (echo "ERROR in requirements.txt" && cat requirements.txt && exit 1)
+
+# Set environment to use cloud-only mode
+ENV ML_CLOUD_ONLY=true
 
 # Create directory structure with src intact
 WORKDIR /app
