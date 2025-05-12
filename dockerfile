@@ -14,15 +14,15 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt
 
-# Salin seluruh folder src
+# Salin seluruh folder src ke app root
+# This makes the src directory contents available at the app root
+COPY src/ .
 
-COPY src .
-
-# Kumpulkan static files (opsional)
+# Kumpulkan static files
 RUN python manage.py collectstatic --noinput || echo "No static files to collect"
 
-# Opsional: expose port 8000
+# Expose port yang akan digunakan oleh daphne
 EXPOSE 8000
 
-# Jalankan server Django dengan binding ke semua interface
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+# Jalankan menggunakan daphne untuk ASGI/Channels support
+CMD ["daphne", "core.asgi:application", "--bind", "0.0.0.0", "--port", "8000"]
