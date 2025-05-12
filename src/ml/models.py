@@ -5,6 +5,8 @@ import numpy as np
 import os
 from django.conf import settings
 import pickle
+import logging
+from ml.model_storage import ModelStorageManager
 
 # Try to import joblib, with a fallback
 try:
@@ -15,8 +17,11 @@ except ImportError:
     class JobLibFallback:
         @staticmethod
         def load(file_path):
-            with open(file_path, 'rb') as f:
-                return pickle.load(f)
+            if hasattr(file_path, 'read'):  # It's a file-like object
+                return pickle.load(file_path)
+            else:  # It's a path
+                with open(file_path, 'rb') as f:
+                    return pickle.load(f)
         
         @staticmethod
         def dump(obj, file_path):
@@ -25,7 +30,10 @@ except ImportError:
     
     joblib = JobLibFallback()
 
-# Path to save and load ML models
+# Initialize model storage manager for both local and R2 storage
+model_storage = ModelStorageManager()
+
+# For backward compatibility
 MODEL_DIR = os.path.join(settings.BASE_DIR, 'ml', 'saved_models')
 os.makedirs(MODEL_DIR, exist_ok=True)
 
@@ -101,23 +109,22 @@ class MLModelManager:
         self._load_models()
     
     def _load_models(self):
-        """Load all available models"""
+        """Load all available models from either local storage or Cloudflare R2"""
         try:
             # Load scaler
-            scaler_path = os.path.join(MODEL_DIR, 'scaler.pkl')
-            if os.path.exists(scaler_path):
-                self.scaler = joblib.load(scaler_path)
+            scaler_filename = 'scaler.pkl'
+            self.scaler = model_storage.load_file(scaler_filename, joblib.load)
             
             # Load label encoder
-            encoder_path = os.path.join(MODEL_DIR, 'label_encoder.pkl')
-            if os.path.exists(encoder_path):
-                self.label_encoder = joblib.load(encoder_path)
+            encoder_filename = 'label_encoder.pkl'
+            self.label_encoder = model_storage.load_file(encoder_filename, joblib.load)
             
             # Load ML models
             for model_type in self.models:
-                model_path = os.path.join(MODEL_DIR, f'{model_type.lower()}_model.pkl')
-                if os.path.exists(model_path):
-                    self.models[model_type] = joblib.load(model_path)
+                model_filename = f'{model_type.lower()}_model.pkl'
+                model = model_storage.load_file(model_filename, joblib.load)
+                if model is not None:
+                    self.models[model_type] = model
         except Exception as e:
             print(f"Error loading ML models: {e}")
     

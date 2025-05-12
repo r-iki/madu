@@ -56,6 +56,12 @@ RUN cd src && python manage.py collectstatic --noinput || echo "No static files 
 # Expose port yang akan digunakan oleh daphne
 EXPOSE 8000
 
-# Change to src directory and run daphne
-WORKDIR /app/src
-CMD ["sh", "-c", "daphne core.asgi:application --bind 0.0.0.0 --port ${PORT:-8000}"]
+# Copy startup script and make it executable
+COPY start-container.sh /app/start-container.sh
+RUN chmod +x /app/start-container.sh
+
+# Change to app directory
+WORKDIR /app
+
+# Run startup script which will import ML models and then start daphne
+CMD ["/app/start-container.sh", "cd", "/app/src", "&&", "daphne", "core.asgi:application", "--bind", "0.0.0.0", "--port", "${PORT:-8000}"]

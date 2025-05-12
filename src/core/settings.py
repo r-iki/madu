@@ -243,7 +243,11 @@ STORAGES={
         'staticfiles':{
             'BACKEND': 'helpers.cloudflare.storages.StaticFilesStorage', #django-storages[s3]
             'OPTIONS': CLOUDFLARE_R2_CONFIG_OPTIONS,
-        } # staticfiles -> static files
+        }, # staticfiles -> static files
+        'ml_models':{
+            'BACKEND': 'ml.s3storage.MLModelStorage', #ML model storage
+            'OPTIONS': CLOUDFLARE_R2_CONFIG_OPTIONS,
+        } # ml_models -> machine learning models
 }
 
 
