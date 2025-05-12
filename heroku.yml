@@ -3,6 +3,7 @@ build:
     web: Dockerfile
 release:
   command:
+    - pip install joblib scikit-learn
     - python manage.py migrate
 run:
   web: cd src && python -m daphne core.asgi:application --bind 0.0.0.0 --port $PORT

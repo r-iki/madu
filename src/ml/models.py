@@ -2,10 +2,28 @@ from django.db import models
 from django.utils.timezone import now
 from sensors.models import SpectralReading
 import numpy as np
-import joblib
 import os
 from django.conf import settings
 import pickle
+
+# Try to import joblib, with a fallback
+try:
+    import joblib
+except ImportError:
+    # Create a simple fallback for joblib
+    print("WARNING: joblib not found. Using pickle as fallback for model loading.")
+    class JobLibFallback:
+        @staticmethod
+        def load(file_path):
+            with open(file_path, 'rb') as f:
+                return pickle.load(f)
+        
+        @staticmethod
+        def dump(obj, file_path):
+            with open(file_path, 'wb') as f:
+                pickle.dump(obj, f)
+    
+    joblib = JobLibFallback()
 
 # Path to save and load ML models
 MODEL_DIR = os.path.join(settings.BASE_DIR, 'ml', 'saved_models')

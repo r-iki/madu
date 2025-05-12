@@ -1,0 +1,29 @@
+{
+  "name": "Madu WebSocket App",
+  "description": "A Django Channels application for WebSocket communication with ML capabilities",
+  "repository": "https://github.com/yourusername/your-repo",
+  "keywords": ["python", "django", "websocket", "channels", "ml"],
+  "env": {
+    "SECRET_KEY": {
+      "description": "A secret key for Django",
+      "generator": "secret"
+    },
+    "DEBUG": {
+      "description": "Enable Django Debug mode",
+      "value": "False"
+    }
+  },
+  "buildpacks": [
+    { "url": "heroku/python" },
+    { "url": "heroku/nodejs" }
+  ],
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "eco"
+    }
+  },
+  "addons": [
+    "heroku-postgresql"
+  ]
+}

@@ -17,10 +17,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Salin file requirements.txt dan install dependencies
-COPY requirements.txt .
+# Explicitly install joblib and scikit-learn first
 RUN pip install --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+    pip install joblib==1.3.2 scikit-learn==1.2.2
+
+# Install other dependencies
+COPY requirements.txt ml-requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt && \
+    pip install --no-cache-dir -r ml-requirements.txt
 
 # Create directory structure with src intact
 WORKDIR /app
