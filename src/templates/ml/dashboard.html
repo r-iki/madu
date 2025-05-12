@@ -687,14 +687,30 @@
             resultsContainer.innerHTML = '';
         }
         resultsContainer.insertBefore(messageElement, resultsContainer.firstChild);
-    }
-    
-    // Auto-connect on page load if requested
-    const autoConnect = new URLSearchParams(window.location.search).get('connect');
-    if (autoConnect === 'true') {
+    }    // Auto-connect on page load (always connect automatically)
+    setTimeout(() => {
+        // Set initial state to connecting
+        wsStatus.textContent = 'Connecting...';
+        wsStatus.className = 'px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800';
+        
+        // Trigger the connect button
+        connectBtn.click();
+        
+        // Check connection status after a delay to ensure UI is updated properly
         setTimeout(() => {
-            connectBtn.click();
-        }, 500);
-    }
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                // Make sure UI shows connected state
+                wsStatus.textContent = 'Connected';
+                wsStatus.className = 'px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800';
+                connectBtn.disabled = true;
+                connectBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                disconnectBtn.disabled = false;
+                disconnectBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                sendTestBtn.disabled = false;
+                sendTestBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                debugLog('Connection status synchronized with UI');
+            }
+        }, 1500); // Allow enough time for connection to establish
+    }, 500);
 </script>
 {% endblock %}
