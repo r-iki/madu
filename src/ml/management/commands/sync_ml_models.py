@@ -36,7 +36,8 @@ class Command(BaseCommand):
         # Get the list of local model files
         model_dir = os.path.join(settings.BASE_DIR, 'ml', 'saved_models')
         os.makedirs(model_dir, exist_ok=True)
-        return glob.glob(os.path.join(model_dir, '*.pkl'))    def _upload_models(self):
+        return glob.glob(os.path.join(model_dir, '*.pkl'))    
+    def _upload_models(self):
         """Upload local models to Cloudflare R2"""
         s3_client = self._get_r2_client()
         bucket_name = settings.CLOUDFLARE_R2_BUCKET
@@ -106,7 +107,9 @@ class Command(BaseCommand):
                         self.stdout.write(self.style.ERROR(f'Failed to download {filename}: {str(e)}'))
         
         except Exception as e:
-            self.stdout.write(self.style.ERROR(f'Error listing objects in R2 storage: {str(e)}'))    def _list_models(self):
+            self.stdout.write(self.style.ERROR(f'Error listing objects in R2 storage: {str(e)}'))    
+    
+    def _list_models(self):
         """List models available in Cloudflare R2"""
         s3_client = self._get_r2_client()
         bucket_name = settings.CLOUDFLARE_R2_BUCKET

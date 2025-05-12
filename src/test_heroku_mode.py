@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 """
-Test script to verify ML model loading from both local and R2 storage.
-This simulates a production environment where files might not exist locally
-but need to be fetched from R2.
+Test script to verify ML model loading directly from R2 storage in Heroku mode.
+This simulates the Heroku production environment where the app loads
+models directly from R2 without trying local storage first.
 """
 import os
 import sys
@@ -23,7 +23,7 @@ django.setup()
 
 from django.conf import settings
 from ml.model_storage import ModelStorageManager
-from ml.models import MLModelManager
+from ml.models import MLModelManager, model_storage
 
 def backup_local_models():
     """Backup local model files to simulate Heroku's ephemeral filesystem"""
@@ -74,69 +74,82 @@ def restore_local_models():
     
     return True
 
-def test_model_loading():
-    """Test ML model loading from both local and R2 storage"""
-    # First verify models exist locally or in R2
-    logger.info("Checking initial model availability...")
-    storage_manager = ModelStorageManager()
-    required_models = ['scaler.pkl', 'label_encoder.pkl', 'rf_model.pkl', 'svm_model.pkl', 'ann_model.pkl']
+def test_heroku_mode():
+    """Test ML model loading directly from R2 storage in Heroku mode"""
+    # Forcibly enable R2 for testing by checking Django settings
+    if not hasattr(settings, 'CLOUDFLARE_R2_BUCKET') or not settings.CLOUDFLARE_R2_BUCKET:
+        # Try setting environment variables for testing
+        logger.info("Setting up test R2 environment variables")
+        os.environ['CLOUDFLARE_R2_BUCKET'] = os.environ.get('CLOUDFLARE_R2_BUCKET', 'test-bucket')
+        os.environ['CLOUDFLARE_R2_ACCESS_KEY'] = os.environ.get('CLOUDFLARE_R2_ACCESS_KEY', 'test-key')
+        os.environ['CLOUDFLARE_R2_SECRET_KEY'] = os.environ.get('CLOUDFLARE_R2_SECRET_KEY', 'test-secret')
+        os.environ['CLOUDFLARE_R2_BUCKET_ENDPOINT'] = os.environ.get('CLOUDFLARE_R2_BUCKET_ENDPOINT', 'https://test.com')
+        
+        # Set these directly on settings too
+        settings.CLOUDFLARE_R2_BUCKET = os.environ.get('CLOUDFLARE_R2_BUCKET')
+        settings.CLOUDFLARE_R2_ACCESS_KEY = os.environ.get('CLOUDFLARE_R2_ACCESS_KEY')
+        settings.CLOUDFLARE_R2_SECRET_KEY = os.environ.get('CLOUDFLARE_R2_SECRET_KEY')
+        settings.CLOUDFLARE_R2_BUCKET_ENDPOINT = os.environ.get('CLOUDFLARE_R2_BUCKET_ENDPOINT')
     
-    for model in required_models:
-        if storage_manager.file_exists(model):
-            logger.info(f"✓ Model {model} is available (local or R2)")
-        else:
-            logger.error(f"✗ Model {model} not found in any storage!")
-            return False
+    # Verify R2 settings are available
+    logger.info(f"R2 bucket: {settings.CLOUDFLARE_R2_BUCKET}")
+    logger.info(f"R2 endpoint: {settings.CLOUDFLARE_R2_BUCKET_ENDPOINT}")
     
     # Backup local models to simulate Heroku's ephemeral filesystem
     backed_up = backup_local_models()
     if not backed_up:
         logger.error("Failed to backup models. Test aborted.")
         return False
-        
-    # Simulate Heroku environment
+    
+    # Set Heroku environment variables to simulate Heroku
     os.environ['DYNO'] = 'test-dyno-1'
     os.environ['FORCE_R2'] = 'true'
-    logger.info("Simulated Heroku environment by setting DYNO environment variable")
     
     try:
-        # Now try to load models, which should fetch from R2
-        logger.info("\nTesting model loading when local files don't exist:")
+        # Reset model_storage instance to use new environment variables
+        model_storage.__init__()
+        
+        # Verify model storage is set to prefer R2
+        if not hasattr(model_storage, 'prefer_r2') or not model_storage.prefer_r2:
+            logger.error("Model storage is not configured to prefer R2 storage on Heroku.")
+            return False
+        
+        logger.info("Model storage correctly set to prefer R2 storage in Heroku mode.")
+        
+        # Now initialize MLModelManager, which will load models directly from R2
+        logger.info("Loading models directly from R2 storage...")
         model_manager = MLModelManager()
         
-        # Check scaler
+        # Check if scaler model was loaded
         if model_manager.scaler is None:
-            logger.error("❌ Test FAILED: Scaler not loaded from R2!")
+            logger.error("❌ Scaler not loaded from R2!")
             return False
-        else:
-            logger.info("✓ Scaler successfully loaded from R2")
+        logger.info("✓ Scaler successfully loaded from R2")
         
         # Check label encoder
         if model_manager.label_encoder is None:
-            logger.error("❌ Test FAILED: Label encoder not loaded from R2!")
+            logger.error("❌ Label encoder not loaded from R2!")
             return False
-        else:
-            logger.info("✓ Label encoder successfully loaded from R2")
+        logger.info("✓ Label encoder successfully loaded from R2")
         
-        # Check models
+        # Check prediction models
         loaded_models = []
         failed_models = []
         
         for model_type, model in model_manager.models.items():
             if model is not None:
                 loaded_models.append(model_type)
+                logger.info(f"✓ {model_type} model loaded successfully from R2")
             else:
                 failed_models.append(model_type)
-        
-        if loaded_models:
-            logger.info(f"✓ Successfully loaded {len(loaded_models)} models from R2: {', '.join(loaded_models)}")
+                logger.error(f"❌ {model_type} model not loaded from R2")
         
         if failed_models:
-            logger.error(f"❌ Failed to load {len(failed_models)} models from R2: {', '.join(failed_models)}")
+            logger.error(f"Failed to load {len(failed_models)} models from R2: {', '.join(failed_models)}")
             return False
         
-        # Test a prediction to see if it works
-        logger.info("\nTesting prediction with loaded models:")
+        # Test prediction
+        logger.info("\nTesting prediction with models loaded from R2...")
         test_spectral_data = {
             'uv_410': 0.5, 'uv_435': 0.6, 'uv_460': 0.7, 'uv_485': 0.8, 'uv_510': 0.9, 'uv_535': 1.0,
             'vis_560': 1.1, 'vis_585': 1.2, 'vis_645': 1.3, 'vis_705': 1.4, 'vis_900': 1.5, 'vis_940': 1.6,
@@ -145,19 +158,20 @@ def test_model_loading():
         
         result = model_manager.predict(test_spectral_data)
         if "error" in result:
-            logger.error(f"❌ Prediction test FAILED: {result['error']}")
+            logger.error(f"❌ Prediction test failed: {result['error']}")
             return False
-        else:
-            logger.info("✓ Prediction successful with loaded models")
-            logger.info("\n✅ All tests PASSED! The model loading system is working correctly!")
+            
+        logger.info("✓ Prediction successful with models loaded from R2")
+        logger.info("✅ Heroku mode test PASSED: Models can be loaded directly from R2 storage!")
+        
         return True
         
     finally:
-        # Restore the models regardless of test outcome
+        # Clean up
         restore_local_models()
         logger.info("Restored original local model files")
         
-        # Clean up Heroku simulation environment variables
+        # Remove environment variables
         if 'DYNO' in os.environ:
             del os.environ['DYNO']
         if 'FORCE_R2' in os.environ:
@@ -165,17 +179,18 @@ def test_model_loading():
 
 if __name__ == "__main__":
     print("\n" + "="*80)
-    print("HEROKU SIMULATION TEST: Testing ML model loading from R2 when local files are missing")
+    print("HEROKU MODE TEST: Testing direct loading of ML models from Cloudflare R2")
     print("="*80 + "\n")
     
-    success = test_model_loading()
+    success = test_heroku_mode()
     
     print("\n" + "="*80)
     if success:
-        print("✅ TEST RESULT: SUCCESS - The system can properly load models from R2")
-        print("The 'Scaler not loaded' error has been resolved.")
+        print("✅ TEST RESULT: SUCCESS - The system can load models directly from R2")
+        print("Heroku deployments will now work correctly with ML models stored in R2.")
     else:
-        print("❌ TEST RESULT: FAILURE - There are still issues with model loading from R2")
+        print("❌ TEST RESULT: FAILURE - There are issues with direct R2 model loading")
+        print("The 'Scaler not loaded' error may still occur in Heroku deployment.")
     print("="*80 + "\n")
     
     sys.exit(0 if success else 1)

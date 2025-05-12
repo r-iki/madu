@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 import os
 import django
 import sys
@@ -29,9 +28,7 @@ def verify_models():
             local_models.append(model)
             print(f"✓ Found local model: {model} ({os.path.getsize(model_path)} bytes)")
         else:
-            missing_models.append(model)
-            print(f"✗ Missing local model: {model}")
-    
+            missing_models.append(model)            print(f"✗ Missing local model: {model}")
     # Check models in R2
     print("\nChecking models in R2 storage:")
     s3_storage = S3ModelStorage()
@@ -70,8 +67,7 @@ def verify_models():
                 print(f"✗ {model_type} model not loaded")
                 
         if loaded_models:
-            print(f"\nSuccessfully loaded {len(loaded_models)} model(s): {', '.join(loaded_models)}")
-        else:
+            print(f"\nSuccessfully loaded {len(loaded_models)} model(s): {', '.join(loaded_models)}")        else:
             print("\nFailed to load any models")
             
     except Exception as e:
@@ -91,7 +87,7 @@ def verify_models():
     
     # Return success only if either local models exist OR models exist in R2
     # This ensures we can still run on Heroku even if local models are missing
-    can_load_models = len(loaded_models) > 0 if 'loaded_models' in locals() else False
+    can_load_models = (len(loaded_models) > 0) and (loaded_models is not None)
     can_use_r2 = len(r2_missing) == 0
     
     return can_load_models or can_use_r2

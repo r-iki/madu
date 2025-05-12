@@ -8,6 +8,15 @@ echo "=================================================="
 # Change to the src directory
 cd /app/src
 
+# Detect if we're running on Heroku
+if [ -n "$DYNO" ]; then
+  echo "Detected Heroku environment!"
+  echo "Enabling cloud-only mode for ML models"
+  export FORCE_R2=true
+  export ML_CLOUD_ONLY=true
+  echo "ML models will be loaded directly from cloud storage without downloading"
+fi
+
 # Maximum number of download attempts
 MAX_ATTEMPTS=3
 attempt=1
@@ -32,6 +41,14 @@ while [ $attempt -le $MAX_ATTEMPTS ] && [ "$success" = false ]; do
     success=true
   else
     echo "❌ Model verification failed on attempt $attempt"
+    
+    # Special handling for Heroku environment
+    if [ -n "$DYNO" ] && [ $attempt -ge $MAX_ATTEMPTS ]; then
+      echo "On Heroku with persistent model loading failures."
+      echo "Will continue anyway and rely on direct R2 loading at runtime."
+      break
+    fi
+    
     attempt=$((attempt+1))
     
     if [ $attempt -le $MAX_ATTEMPTS ]; then
@@ -44,8 +61,15 @@ done
 if [ "$success" = false ]; then
   echo ""
   echo "WARNING: Failed to verify all models after $MAX_ATTEMPTS attempts."
-  echo "The application may still function if it can load models from R2 on demand."
-  echo "Check the logs for specific errors."
+  
+  if [ -n "$DYNO" ]; then
+    echo "Running on Heroku with R2 priority mode enabled."
+    echo "The application will attempt to load models directly from R2 at runtime."
+    echo "This should resolve the 'Scaler not loaded' error in previous deployments."
+  else
+    echo "The application may still function if it can load models from R2 on demand."
+    echo "Check the logs for specific errors."
+  fi
   echo ""
 fi
 
