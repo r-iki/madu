@@ -1,29 +1,39 @@
-# Gunakan Python sebagai base image
+# Use Python as base image
 FROM python:3.12-slim
 
+# Set environment variables - disables bytecode generation and buffering
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONFAULTHANDLER=1
+ENV PYTHONHASHSEED=random
 
+# Increase pip timeout to handle poor network conditions
+ENV PIP_DEFAULT_TIMEOUT=100
+ENV PIP_DISABLE_PIP_VERSION_CHECK=1
 
-# Set environment variables
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
-
-# Set working directory ke /app
+# Set working directory
 WORKDIR /app
 
-# Install system dependencies for some Python packages
+# Install system dependencies first
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     gcc \
+    g++ \
+    libpq-dev \
+    git \
+    libffi-dev \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Explicitly install joblib and scikit-learn first
-RUN pip install --upgrade pip && \
-    pip install joblib==1.3.2 scikit-learn==1.2.2
-
-# Install other dependencies
+# Copy requirements files
 COPY requirements.txt ml-requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt && \
+
+# Install Python dependencies in a single layer to reduce image size
+RUN pip install --upgrade pip && \
+    pip install wheel && \
+    pip install setuptools && \
+    pip install joblib==1.3.2 scikit-learn==1.2.2 && \
+    pip install --no-cache-dir -r requirements.txt && \
     pip install --no-cache-dir -r ml-requirements.txt
 
 # Create directory structure with src intact
