@@ -8,6 +8,9 @@ import pickle
 import logging
 from ml.model_storage import ModelStorageManager
 
+# Configure logger
+logger = logging.getLogger(__name__)
+
 # Try to import joblib, with a fallback
 try:
     import joblib
@@ -107,27 +110,49 @@ class MLModelManager:
         
         # Try to load pre-trained models
         self._load_models()
-    
+        
     def _load_models(self):
         """Load all available models from either local storage or Cloudflare R2"""
         try:
             # Load scaler
             scaler_filename = 'scaler.pkl'
             self.scaler = model_storage.load_file(scaler_filename, joblib.load)
+            if self.scaler is None:
+                logger.error("Failed to load scaler model. This is required for predictions.")
+                # Attempt to import from R2 specifically
+                from ml.management.commands.import_models_from_r2 import Command
+                Command().handle(retry=3, force=True, verify=True)
+                # Try loading again
+                self.scaler = model_storage.load_file(scaler_filename, joblib.load)
             
             # Load label encoder
             encoder_filename = 'label_encoder.pkl'
             self.label_encoder = model_storage.load_file(encoder_filename, joblib.load)
+            if self.label_encoder is None:
+                logger.error("Failed to load label encoder model.")
             
             # Load ML models
+            loaded_models = 0
             for model_type in self.models:
                 model_filename = f'{model_type.lower()}_model.pkl'
                 model = model_storage.load_file(model_filename, joblib.load)
                 if model is not None:
                     self.models[model_type] = model
+                    loaded_models += 1
+                else:
+                    logger.warning(f"Could not load {model_type} model. Some predictions may be unavailable.")
+            
+            # Log summary
+            logger.info(f"ML model loading completed: {loaded_models}/{len(self.models)} models loaded.")
+            if self.scaler is not None:
+                logger.info("Scaler loaded successfully.")
+            
         except Exception as e:
-            print(f"Error loading ML models: {e}")
-    
+            logger.error(f"Error loading ML models: {e}")
+            # Re-raise if it's a critical error
+            if "scaler" in str(e).lower():
+                raise
+                
     def predict(self, spectral_data, model_type='all'):
         """Make predictions using the specified model or all models
         
@@ -138,11 +163,18 @@ class MLModelManager:
         Returns:
             Dictionary with prediction results
         """
+        # Check if scaler is loaded - attempt to reload if not
         if self.scaler is None:
-            return {"error": "Scaler not loaded. Models may not be trained yet."}
+            logger.warning("Scaler not loaded. Attempting to reload models...")
+            self._load_models()
+            
+            # If still not loaded after reload attempt, return error
+            if self.scaler is None:
+                return {"error": "Scaler not loaded. Models may not be trained yet or may be missing from storage."}
         
+        # Check if requested model is available
         if model_type != 'all' and self.models[model_type] is None:
-            return {"error": f"{model_type} model not loaded."}
+            return {"error": f"{model_type} model not loaded. Please check if model file exists."}
         
         # Extract features
         features = np.array([[

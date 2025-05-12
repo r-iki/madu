@@ -1,0 +1,86 @@
+import os
+import django
+import sys
+
+# Set up Django settings
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings')
+django.setup()
+
+# Now import settings
+from django.conf import settings
+from ml.s3storage import S3ModelStorage
+from ml.models import MLModelManager
+
+def verify_models():
+    """Verify that all required ML models are available"""
+    model_dir = os.path.join(settings.BASE_DIR, 'ml', 'saved_models')
+    required_models = ['scaler.pkl', 'label_encoder.pkl', 'rf_model.pkl', 'svm_model.pkl', 'ann_model.pkl']
+    
+    print(f"Checking for models in {model_dir}")
+    
+    # Check if models exist locally
+    local_models = []
+    missing_models = []
+    
+    for model in required_models:
+        model_path = os.path.join(model_dir, model)
+        if os.path.exists(model_path):
+            local_models.append(model)
+            print(f"✓ Found local model: {model} ({os.path.getsize(model_path)} bytes)")
+        else:
+            missing_models.append(model)
+            print(f"✗ Missing local model: {model}")
+    
+    # Check models in R2
+    print("\nChecking models in R2 storage:")
+    s3_storage = S3ModelStorage()
+    r2_models = s3_storage.list_models()
+    
+    for model in required_models:
+        if model in r2_models:
+            print(f"✓ Found in R2: {model}")
+        else:
+            print(f"✗ Missing in R2: {model}")
+      # Try to initialize the MLModelManager class to verify it works
+    print("\nTesting MLModelManager initialization:")
+    try:
+        ml_model = MLModelManager()
+        
+        if hasattr(ml_model, 'scaler') and ml_model.scaler is not None:
+            print("✓ Scaler loaded successfully")
+        else:
+            print("✗ Scaler not loaded")
+            
+        if hasattr(ml_model, 'label_encoder') and ml_model.label_encoder is not None:
+            print("✓ Label encoder loaded successfully")
+        else:
+            print("✗ Label encoder not loaded")
+            
+        # Check each model type
+        loaded_models = []
+        for model_type, model in ml_model.models.items():
+            if model is not None:
+                loaded_models.append(model_type)
+                print(f"✓ {model_type} model loaded successfully")
+            else:
+                print(f"✗ {model_type} model not loaded")
+                
+        if loaded_models:
+            print(f"\nSuccessfully loaded {len(loaded_models)} model(s): {', '.join(loaded_models)}")
+        else:
+            print("\nFailed to load any models")
+            
+    except Exception as e:
+        print(f"Error initializing MLModel: {e}")
+    
+    print("\nSummary:")
+    if missing_models:
+        print(f"Missing {len(missing_models)} local models: {', '.join(missing_models)}")
+    else:
+        print("All required models are available locally.")
+        
+    return len(missing_models) == 0
+
+if __name__ == "__main__":
+    success = verify_models()
+    sys.exit(0 if success else 1)

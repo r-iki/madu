@@ -84,37 +84,19 @@ class Command(BaseCommand):
                     # File doesn't exist, proceed with upload
                     pass
             
-            try:
-                # Method 1: Use ModelStorageManager (preferred)
-                try:
-                    self.stdout.write(f"Loading model {filename}...")
-                    model_obj = loader(file_path)
-                    
-                    self.stdout.write(f"Uploading model {filename} to R2 storage...")
-                    if model_storage.save_file(model_obj, filename, saver):
-                        success_count += 1
-                        self.stdout.write(self.style.SUCCESS(f"Successfully uploaded {filename} to R2 storage."))
-                    else:
-                        raise Exception("ModelStorageManager.save_file returned False")
-                        
-                except Exception as e:
-                    self.stdout.write(self.style.WARNING(
-                        f"Error using ModelStorageManager: {str(e)}. Trying direct upload..."
-                    ))
-                    
-                    # Method 2: Direct upload with boto3
-                    with open(file_path, 'rb') as file_data:
-                        s3_client.upload_fileobj(
-                            file_data, 
-                            bucket_name, 
-                            r2_key,
-                            ExtraArgs={
-                                'ContentType': 'application/octet-stream',
-                                'ACL': 'private'
-                            }
-                        )
-                    success_count += 1
-                    self.stdout.write(self.style.SUCCESS(f"Successfully uploaded {filename} to R2 storage using direct method."))                # Verify the upload if requested
+            try:                # Direct upload with boto3 (more reliable)
+                self.stdout.write(f"Uploading {filename} to R2 storage...")
+                with open(file_path, 'rb') as file_data:
+                    s3_client.upload_fileobj(
+                        file_data, 
+                        bucket_name, 
+                        r2_key,
+                        ExtraArgs={
+                            'ContentType': 'application/octet-stream',
+                        }
+                    )
+                success_count += 1
+                self.stdout.write(self.style.SUCCESS(f"Successfully uploaded {filename} to R2 storage."))# Verify the upload if requested
                 if options['verify']:
                     try:
                         head = s3_client.head_object(Bucket=bucket_name, Key=r2_key)

@@ -2,6 +2,7 @@ import os
 import django
 import boto3
 import sys
+import glob
 
 # Print Python version
 print(f"Python version: {sys.version}")
@@ -24,6 +25,31 @@ def upload_test_file():
     
     print(f"Using bucket: {settings.CLOUDFLARE_R2_BUCKET}")
     
+    # Upload all model files directly
+    model_dir = os.path.join(settings.BASE_DIR, 'ml', 'saved_models')
+    model_files = glob.glob(os.path.join(model_dir, '*.pkl'))
+    
+    print(f"Found {len(model_files)} model files to upload:")
+    for model_path in model_files:
+        filename = os.path.basename(model_path)
+        print(f"  - {filename}")
+    
+    for model_path in model_files:
+        filename = os.path.basename(model_path)
+        key = f'ml_models/{filename}'
+        
+        print(f"\nUploading {filename} to {key}...")
+        with open(model_path, 'rb') as file_obj:
+            s3.upload_fileobj(
+                file_obj,
+                settings.CLOUDFLARE_R2_BUCKET,
+                key,
+                ExtraArgs={
+                    'ContentType': 'application/octet-stream'
+                }
+            )
+        print(f"Upload of {filename} complete!")
+        
     # Create a test file
     test_key = 'ml_models/test_file.txt'
     test_content = b'This is a test file for R2 storage!'

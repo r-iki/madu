@@ -5,6 +5,9 @@ import os
 import io
 import boto3
 from django.conf import settings
+import logging
+
+logger = logging.getLogger(__name__)
 
 class ModelStorageManager:
     """
@@ -31,25 +34,29 @@ class ModelStorageManager:
                
                 # Flag to determine if we should use R2 storage
                 # Use R2 when DEBUG is False (production) or forced by environment variable
-                self.use_r2 = not settings.DEBUG
+                self.use_r2 = not settings.DEBUG or os.environ.get('FORCE_R2', False)
                 self.bucket_name = settings.CLOUDFLARE_R2_BUCKET
                 
                 if self.use_r2:
                     self._init_r2_client()
             else:
-                print("Cloudflare R2 settings not found. Using local storage only.")
+                logger.warning("Cloudflare R2 settings not found. Using local storage only.")
         except Exception as e:
-            print(f"Error initializing R2 storage. Using local storage only. Error: {e}")
+            logger.error(f"Error initializing R2 storage. Using local storage only. Error: {e}")
             self.use_r2 = False
     
     def _init_r2_client(self):
         """Initialize the Cloudflare R2 client"""
-        self.s3_client = boto3.client(
-            's3',
-            aws_access_key_id=settings.CLOUDFLARE_R2_ACCESS_KEY,
-            aws_secret_access_key=settings.CLOUDFLARE_R2_SECRET_KEY,
-            endpoint_url=settings.CLOUDFLARE_R2_BUCKET_ENDPOINT,
-        )
+        try:
+            self.s3_client = boto3.client(
+                's3',
+                aws_access_key_id=settings.CLOUDFLARE_R2_ACCESS_KEY,
+                aws_secret_access_key=settings.CLOUDFLARE_R2_SECRET_KEY,
+                endpoint_url=settings.CLOUDFLARE_R2_BUCKET_ENDPOINT,
+            )
+        except Exception as e:
+            logger.error(f"Failed to initialize S3 client: {e}")
+            self.use_r2 = False
     
     def _get_r2_key(self, filename):
         """Convert a filename to an R2 key"""
@@ -57,18 +64,20 @@ class ModelStorageManager:
     
     def file_exists(self, filename):
         """Check if a model file exists in the appropriate storage"""
-        if self.use_r2:
+        # Check local storage first
+        local_path = os.path.join(self.local_model_dir, os.path.basename(filename))
+        if os.path.exists(local_path):
+            return True
+            
+        # Check R2 if enabled
+        if self.use_r2 and self.s3_client:
             try:
                 key = self._get_r2_key(filename)
                 self.s3_client.head_object(Bucket=self.bucket_name, Key=key)
                 return True
             except Exception:
-                # Check local backup as fallback
-                local_path = os.path.join(self.local_model_dir, os.path.basename(filename))
-                return os.path.exists(local_path)
-        else:
-            local_path = os.path.join(self.local_model_dir, os.path.basename(filename))
-            return os.path.exists(local_path)
+                return False
+        return False
     
     def get_filepath(self, filename):
         """Get the full path to a model file (for local storage only)"""
@@ -85,7 +94,16 @@ class ModelStorageManager:
         Returns:
             The loaded model or None if file not found
         """
-        if self.use_r2:
+        # First try local storage
+        local_path = os.path.join(self.local_model_dir, os.path.basename(filename))
+        if os.path.exists(local_path):
+            try:
+                return loader_func(local_path)
+            except Exception as e:
+                logger.error(f"Error loading local file {filename}: {e}")
+                
+        # If not found locally or error loading, try R2 if enabled
+        if self.use_r2 and self.s3_client:
             try:
                 # Try to load from R2
                 key = self._get_r2_key(filename)
@@ -94,22 +112,21 @@ class ModelStorageManager:
                 
                 # Load from bytes buffer
                 buffer = io.BytesIO(file_content)
+                
+                # Also save locally for future use
+                try:
+                    with open(local_path, 'wb') as f:
+                        f.write(file_content)
+                except Exception as e:
+                    logger.warning(f"Failed to save local copy of {filename}: {e}")
+                
                 return loader_func(buffer)
             
             except Exception as e:
-                print(f"Error loading from R2, trying local: {str(e)}")
-                
-                # Fallback to local file
-                local_path = os.path.join(self.local_model_dir, os.path.basename(filename))
-                if os.path.exists(local_path):
-                    return loader_func(local_path)
-                return None
-        else:
-            # Load from local file
-            local_path = os.path.join(self.local_model_dir, os.path.basename(filename))
-            if os.path.exists(local_path):
-                return loader_func(local_path)
-            return None
+                logger.error(f"Error loading from R2: {str(e)}")
+        
+        logger.warning(f"File {filename} not found in any storage")
+        return None
     
     def save_file(self, model_obj, filename, saver_func):
         """
@@ -131,18 +148,21 @@ class ModelStorageManager:
             saver_func(model_obj, local_path)
             
             # If using R2, also upload to R2
-            if self.use_r2:
-                key = self._get_r2_key(filename)
-                with open(local_path, 'rb') as file_data:
-                    self.s3_client.upload_fileobj(
-                        file_data,
-                        self.bucket_name,
-                        key,
-                        ExtraArgs={'ACL': 'private'}
-                    )
+            if self.use_r2 and self.s3_client:
+                try:
+                    key = self._get_r2_key(filename)
+                    with open(local_path, 'rb') as file_data:
+                        self.s3_client.upload_fileobj(
+                            file_data,
+                            self.bucket_name,
+                            key,
+                            ExtraArgs={'ContentType': 'application/octet-stream'}
+                        )
+                except Exception as e:
+                    logger.error(f"Error uploading to R2: {e}")
             
             return True
         
         except Exception as e:
-            print(f"Error saving model {filename}: {str(e)}")
+            logger.error(f"Error saving model {filename}: {str(e)}")
             return False
