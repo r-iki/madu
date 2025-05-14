@@ -38,7 +38,10 @@
                     <th colspan="6" class="p-3 border border-gray-200 text-center whitespace-nowrap">Sensor AS72652</th>
                     <th colspan="6" class="p-3 border border-gray-200 text-center whitespace-nowrap">Sensor AS72653</th>
                     <th rowspan="2" class="p-3 border border-gray-200 whitespace-nowrap">Temperature</th>
+                    {% if request.user.is_superuser %}
                     <th rowspan="2" class="p-3 border border-gray-200 whitespace-nowrap">Aksi</th>
+                    {% endif %}
+
                 </tr>
                 <tr>
                     <th class="p-2 border lowercase border-gray-200 whitespace-nowrap">410 nm</th>
@@ -91,6 +94,7 @@
         <td class="p-2 border border-gray-200" data-field="nir_810">{{ reading.nir_810 }}</td>
         <td class="p-2 border border-gray-200" data-field="nir_860">{{ reading.nir_860 }}</td>
         <td class="p-2 border border-gray-200" data-field="temperature">{{ reading.temperature }}</td>
+        {% if request.user.is_superuser %}
         <td class="p-3 border border-gray-200">
             <div class="flex gap-2">
             <button class="edit-row bg-yellow-500 text-white px-2 py-1 rounded">Edit</button>
@@ -98,6 +102,7 @@
             <button class="delete-row bg-red-600 text-white px-2 py-1 rounded">Hapus</button> 
             </div>
         </td>
+        {% endif %}
     </tr>
     {% endfor %}
 </tbody>
